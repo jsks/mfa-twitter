@@ -1,0 +1,11 @@
+refs/*
+!refs/accounts.csv
+
+/**/compiled/
+
+.env
+main
+mfa
+
+/**/*.json
+/**/*.org

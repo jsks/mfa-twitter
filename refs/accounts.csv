@@ -1,0 +1,44 @@
+user_id,screen_name,country,valid_from,valid_to,account_type
+147512019,SweMFA,Sweden,,,mfa
+966113328,NorwayMFA,Norway,,,mfa
+1358883631,DanishMFA,Denmark,,,mfa
+274431647,Ulkoministerio,Finland,,,mfa
+631186337,MFAIceland,Iceland,,,mfa
+24698180,MFAestonia,Estonia,,,mfa
+356777135,Latvian_MFA,Latvia,,,mfa
+226541132,LithuaniaMFA,Lithuania,,,mfa
+255471924,mfa_russia,Russia,,,mfa
+297925007,BelarusMFA,Belarus,,,mfa
+143427448,MFA_Ukraine,Ukraine,,,mfa
+81055599,PolandMFA,Poland,,,mfa
+453030125,GermanyDiplo,Germany,,,mfa
+98853413,DutchMFA,Netherlands,,,mfa
+380824639,BelgiumMFA,Belgium,,,mfa
+711866406950801408,MFA_Lu,Luxembourg,,,mfa
+438355707,francediplo_EN,France,,,mfa
+2775155944,SpainMFA,Spain,,,mfa
+1173607963233280000,Marocdiplo_EN,Morroco,,,mfa
+599114492,ItalyMFA,Italy,,,mfa
+998500182730911744,MFEAMalta,Malta,,,mfa
+814031694353338368,SwissMFA,Switzerland,,,mfa
+233612497,MFA_Austria,Austria,,,mfa
+192973828,MZZRS,Slovenia,,,mfa
+791606834,MVEP_hr,Croatia,,,mfa
+976007870130081792,MFA_MNE,Montenegro,,,mfa
+143440559,AlbanianDiplo,Albania,,,mfa
+1234794494614278144,mfa_bih,"Bosnia and Herzegovina",,,mfa
+872012115674058756,MFA_MKD,"North Macedonia",,,mfa
+134812919,GreeceMFA,Greece,,,mfa
+1446632138,CyprusMFA,Cyprus,,,mfa
+389479556,MFATurkey,Turkey,,,mfa
+133272363,MFABulgaria,Bulgaria,,,mfa
+295642096,MFAKOSOVO,Kosovo,,,mfa
+2860575411,SRBDiplomacy,Serbia,,,mfa/news
+82612059,MAERomania,Romania,,,mfa
+875062916,Diplomacy_RM,Moldova,,,mfa
+3068668348,abouthungary,Hungary,,,mfa/news
+1489970233,SlovakiaMFA,Slovakia,,,mfa
+2752037400,CzechMFA,"Czech Republic",,,mfa
+14353202,FCDOGovUK,"United Kingdom",,,mfa
+9624742,StateDept,"United States of America",,,mfa
+1183694592433983489,MFA_China,"People's Republic of China",,,mfa
