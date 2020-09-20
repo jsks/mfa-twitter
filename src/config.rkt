@@ -25,6 +25,10 @@
              (substring str b (string-length str)))]
     [_ (values str #f)]))
 
+(define (config-line? str)
+  (and (non-empty-string? str)
+       (not (char=? (string-ref (string-trim str #:right #f) 0) #\#))))
+
 (define (validate config-args)
   (for ([key (in-list required-fields)]
         #:when (not (hash-has-key? config-args key)))
@@ -35,7 +39,7 @@
   (call-with-input-file file
     (lambda (port)
       (for ([line (in-lines port)]
-            #:when (not (string=? line "")))
+            #:when (config-line? line))
         (let-values ([(key value) (split-once #rx" *= *" line)])
           (hash-set! config-args key (strip-quotes value))))))
   (validate config-args)
