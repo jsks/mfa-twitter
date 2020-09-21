@@ -1,7 +1,13 @@
 do $$
 begin
     if not exists (select 1 from pg_type where typname = 'atype') then
-        create type atype as enum ('mfa', 'mfa/news', 'embassy', 'foreign_minister');
+        create type atype as enum (
+            'mfa',
+            'mfa/news',
+            'embassy',
+            'foreign_minister',
+            'spokesperson'
+        );
     end if;
 end $$;
 
