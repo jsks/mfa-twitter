@@ -27,7 +27,7 @@
 
 (define (config-line? str)
   (and (non-empty-string? str)
-       (not (char=? (string-ref (string-trim str #:right #f) 0) #\#))))
+       (not (char=? (string-ref (string-trim str #:right? #f) 0) #\#))))
 
 (define (validate config-args)
   (for ([key (in-list required-fields)]
