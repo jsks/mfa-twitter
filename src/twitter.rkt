@@ -1,12 +1,10 @@
 #lang racket/base
 
-;; TODO: error handling
-;; TODO: rate limiting?
-
 (require json
          net/uri-codec
          net/url
          racket/contract
+         racket/match
          racket/string)
 
 (require (for-syntax racket/base))
@@ -35,7 +33,7 @@
 
 (define (http-get url)
   (log-twitter-api-debug "Fetching ~a" (url->string url))
-  (get-pure-port url (list (access-token))))
+  (get-impure-port url (list (access-token))))
 
 (define (get-lowest-id tweets)
   (for/fold ([aux (hash-ref (car tweets) 'id)])
@@ -54,14 +52,30 @@
               [querystr (alist->form-urlencoded (append default-query query))])
          (string->url (format "~a?~a" endpoint querystr)))]))
 
+(define (http-status header-str)
+  (regexp-replace #px"HTTP/\\d\\.\\d\\s+(\\d+[^\r\n]+).*" header-str "\\1"))
+
+(define (extract-err json)
+  (match (hash-ref json 'errors)
+    [(list (hash-table ('code code) ('message message)))
+     (format "Error Code ~a, ~a" code message)]
+    [_ "No twitter error found"]))
+
+(define (handler port)
+  (values (http-status (purify-port port))
+          (read-json port)))
+
 (define (get-tweets screen_name proc
                     #:max_id [max_id #f]
                     #:since_id [since_id #f])
-  (let* ([url (make-url screen_name max_id since_id)]
-         [tweets (call/input-url url http-get read-json)])
-    (when (> (length tweets) 0)
-      (log-twitter-api-info "Downloaded ~a tweets from @~a" (length tweets) screen_name)
-      (proc tweets)
-      (get-tweets screen_name proc
-                  #:max_id (- (get-lowest-id tweets) 1)
-                  #:since_id since_id))))
+  (let*-values ([(url) (make-url screen_name max_id since_id)]
+                [(status tweets) (call/input-url url http-get handler)])
+    (cond
+      [(not (string=? status "200 OK"))
+       (log-twitter-api-error "@~a ~a" screen_name (extract-err tweets))]
+      [(> (length tweets) 0)
+       (log-twitter-api-info "Downloaded ~a tweets from @~a" (length tweets) screen_name)
+       (proc tweets)
+       (get-tweets screen_name proc
+                   #:max_id (- (get-lowest-id tweets) 1)
+                   #:since_id since_id)])))
