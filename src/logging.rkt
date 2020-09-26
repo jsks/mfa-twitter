@@ -8,7 +8,7 @@
 
 (provide
  (contract-out
-  [init-logger (->* (#:level log-level/c) () #:rest (listof symbol?) void?)]))
+  [init-logger (-> log-level/c void?)]))
 
 (date-display-format 'iso-8601)
 
@@ -18,6 +18,11 @@
   (match-let ([(vector level msg data topic) data])
     (let ([timestamp (date->string (current-date) #t)])
       (printf "[~a] [~a] ~a\n" level timestamp msg))))
+
+(define (make-receiver level)
+  (when (not (eq? level 'debug))
+    (current-logger (make-logger 'mfa)))
+  (make-log-receiver (current-logger) level))
 
 (define (make-receiver-thread receiver)
   (define (drain)
@@ -32,14 +37,8 @@
               [else (print-log data)
                     (loop)]))))))
 
-(define (make-receiver level topics)
-  (let ([args (for/fold ([aux '()])
-                        ([topic (in-list topics)])
-                (append aux (list level topic)))])
-    (apply make-log-receiver (current-logger) args)))
-
-(define (init-logger #:level level . topics)
-  (let* ([receiver (make-receiver level topics)]
+(define (init-logger level)
+  (let* ([receiver (make-receiver level)]
          [receiver-thread (make-receiver-thread receiver)])
     (executable-yield-handler
      (lambda (_) (channel-put stop-channel 'stop)

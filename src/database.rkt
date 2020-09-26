@@ -11,23 +11,21 @@
  (contract-out
   [get-accounts (-> (listof vector?))]
   [insert-tweets (-> (listof jsexpr?) void?)]
-  [init-db (-> #:user string? #:password string? #:database string? void?)]
+  [db-user (parameter/c string?)]
+  [db-password (parameter/c string?)]
+  [db-database (parameter/c string?)]
   [call-with-bound-transaction (-> (-> any) any)]))
 
-(struct db-settings (user database password) #:mutable)
-(define credentials (db-settings "" "" ""))
-
-(define (init-db #:user user #:password password #:database database)
-  (set-db-settings-user! credentials user)
-  (set-db-settings-password! credentials password)
-  (set-db-settings-database! credentials database))
+(define db-user (make-parameter ""))
+(define db-password (make-parameter ""))
+(define db-database (make-parameter ""))
 
 (define db-conn
   (virtual-connection
    (connection-pool
-    (lambda () (postgresql-connect #:user (db-settings-user credentials)
-                                   #:database (db-settings-database credentials)
-                                   #:password (db-settings-password credentials)))
+    (lambda () (postgresql-connect #:user (db-user)
+                                   #:database (db-database)
+                                   #:password (db-password)))
     #:max-idle-connections 1)))
 
 (define (call-with-bound-transaction proc)

@@ -72,7 +72,7 @@
                 [(status tweets) (call/input-url url http-get handler)])
     (cond
       [(not (string=? status "200 OK"))
-       (log-twitter-api-error "@~a ~a" screen_name (extract-err tweets))]
+       (log-twitter-api-error "~a @~a ~a" status screen_name (extract-err tweets))]
       [(> (length tweets) 0)
        (log-twitter-api-info "Downloaded ~a tweets from @~a" (length tweets) screen_name)
        (proc tweets)

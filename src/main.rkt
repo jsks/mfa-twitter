@@ -11,9 +11,8 @@
          "thread-pool.rkt"
          "twitter.rkt")
 
-(init-logger 'config-file 'db 'twitter-api 'thread-pool #:level 'info)
-
 (define config-file (make-parameter ".env"))
+(define log-level (make-parameter 'info))
 (define num-threads (make-parameter 8))
 
 (define cli-parser
@@ -22,14 +21,18 @@
    #:once-each
    [("-c" "--configuration") file
     "Location of configuration file" (config-file file)]
+   [("-l" "--log-level") level
+    "Verbosity level for log messages" (log-level (string->symbol level))]
    [("-n" "--num-threads") num
-    "Maximum number of concurrent threads" (num-threads num)]))
+    "Maximum number of concurrent threads" (num-threads (string->number num))]))
+
+(init-logger (log-level))
 
 (define config-args (load-config (config-file)))
 (access-token (hash-ref config-args 'access_token))
-(init-db #:user (hash-ref config-args 'pg_user)
-         #:password (hash-ref config-args 'pg_password)
-         #:database (hash-ref config-args 'pg_database))
+(db-user (hash-ref config-args 'pg_user))
+(db-password (hash-ref config-args 'pg_password))
+(db-database (hash-ref config-args 'pg_database))
 
 (define (prune tweet)
   (for/hash ([(key value) (in-hash tweet)]
@@ -44,8 +47,8 @@
   (insert-tweets (map prune tweets)))
 
 (define (get-and-process-tweets account)
-  (log-info "Processing ~a" account)
   (match-let ([(vector screen_name since_id) account])
+    (log-info "Processing @~a" screen_name)
     (call-with-bound-transaction
      (thunk (get-tweets screen_name process-tweets #:since_id since_id)))))
 
