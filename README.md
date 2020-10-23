@@ -6,16 +6,14 @@ accounts.
 ## Database Setup
 
 ``` shell
-$ psql -h <postgres-host> -U <postgres-user> -d postgres -f sql/init.sql
-$ psql -h <postgres-host> -U <postgres-user> -d postgres <<EOF
-\copy accounts (user_id, screen_name, country, valid_from, valid_to, account_type)
-    from 'refs/accounts.csv' delimiter ',' csv header
-EOF
+$ podman run -p 5432:5432 -d postgres
+$ scripts/bootstrap.sh
 ```
 
 ## Running
 
 ``` shell
-$ raco exe -o mfa src/main.rkt
+$ raco make src/main.rkt
+$ raco exe -l -o mfa src/main.rkt
 $ ./mfa -c .env
 ```
