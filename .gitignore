@@ -9,3 +9,4 @@ mfa
 
 /**/*.json
 /**/*.org
+/**/*.tar.gz

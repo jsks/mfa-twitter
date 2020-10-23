@@ -11,22 +11,19 @@
          "thread-pool.rkt"
          "twitter.rkt")
 
-(define config-file (make-parameter ".env"))
-(define log-level (make-parameter 'info))
+(define cred-file (make-parameter ".env"))
 (define num-threads (make-parameter 8))
 
 (define cli-parser
   (command-line
    #:program "mfa"
    #:once-each
-   [("-c" "--configuration") file
-    "Location of configuration file" (config-file file)]
-   [("-l" "--log-level") level
-    "Verbosity level for log messages" (log-level (string->symbol level))]
+   [("-c" "--credential-file") file
+    "Location of file containing twitter token and db credentials" (cred-file file)]
    [("-n" "--num-threads") num
     "Maximum number of concurrent threads" (num-threads (string->number num))]))
 
-(init-logger (log-level))
+(define cred-args (load-config (cred-file)))
 
 (define config-args (load-config (config-file)))
 (access-token (hash-ref config-args 'access_token))

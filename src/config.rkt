@@ -8,8 +8,6 @@
  (contract-out
   [load-config (-> path-string? hash?)]))
 
-(define-logger config-file)
-
 (define required-fields '(access_token
                           pg_user
                           pg_password
@@ -32,7 +30,7 @@
 (define (validate config-args)
   (for ([key (in-list required-fields)]
         #:when (not (hash-has-key? config-args key)))
-    (log-config-file-fatal "Missing argument in configuration file: ~a" key)))
+    (raise-user-error 'load-config "Missing argument in configuration file: ~a" key)))
 
 (define (load-config file)
   (define config-args (make-hash))
