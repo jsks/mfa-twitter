@@ -9,23 +9,25 @@
 
 (provide
  (contract-out
+  [call-with-bound-transaction (-> (-> any) any)]
   [get-accounts (-> (listof vector?))]
-  [insert-tweets (-> (listof jsexpr?) void?)]
-  [db-user (parameter/c string?)]
-  [db-password (parameter/c string?)]
-  [db-database (parameter/c string?)]
-  [call-with-bound-transaction (-> (-> any) any)]))
+  [init-db (-> #:user string? #:password string? #:database string? void?)]
+  [insert-tweets (-> (listof jsexpr?) void?)]))
 
-(define db-user (make-parameter ""))
-(define db-password (make-parameter ""))
-(define db-database (make-parameter ""))
+(struct db-settings (user database password) #:mutable)
+(define credentials (db-settings "" "" ""))
+
+(define (init-db #:user user #:password password #:database database)
+  (set-db-settings-user! credentials user)
+  (set-db-settings-password! credentials password)
+  (set-db-settings-database! credentials database))
 
 (define db-conn
   (virtual-connection
    (connection-pool
-    (lambda () (postgresql-connect #:user (db-user)
-                                   #:database (db-database)
-                                   #:password (db-password)))
+    (lambda () (postgresql-connect #:user (db-settings-user credentials)
+                                   #:database (db-settings-database credentials)
+                                   #:password (db-settings-password credentials)))
     #:max-idle-connections 1)))
 
 (define (call-with-bound-transaction proc)
@@ -34,6 +36,7 @@
 (define (get-accounts)
   (let ([query @~a{select screen_name, max(tweet_id) from accounts
                    left join tweets using (user_id)
+                   where accounts.deleted = false
                    group by screen_name}])
     (for/list ([(screen_name since_id) (in-query db-conn query)])
       (vector screen_name (sql-null->false since_id)))))

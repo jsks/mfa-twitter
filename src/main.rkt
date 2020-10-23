@@ -25,11 +25,10 @@
 
 (define cred-args (load-config (cred-file)))
 
-(define config-args (load-config (config-file)))
-(access-token (hash-ref config-args 'access_token))
-(db-user (hash-ref config-args 'pg_user))
-(db-password (hash-ref config-args 'pg_password))
-(db-database (hash-ref config-args 'pg_database))
+(access-token (hash-ref cred-args 'access_token))
+(init-db #:user (hash-ref cred-args 'pg_user)
+         #:password (hash-ref cred-args 'pg_password)
+         #:database (hash-ref cred-args 'pg_database))
 
 (define (prune tweet)
   (for/hash ([(key value) (in-hash tweet)]
