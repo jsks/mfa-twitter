@@ -6,6 +6,7 @@ refs/*
 .env
 main
 mfa
+queries.sql
 
 /**/*.json
 /**/*.org
