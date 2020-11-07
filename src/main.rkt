@@ -41,12 +41,12 @@
 
 (define (get-and-process-tweets account)
   (match-let ([(vector screen_name since_id) account])
-    (log-info "Processing @~a" screen_name)
     (call-with-bound-transaction
      (lambda ()
-      (let ([tweet-generator (get-timeline screen_name since_id)])
+      (let ([tweet-generator (get-timeline screen_name #:since_id since_id)])
         (for ([tweets (in-producer tweet-generator)]
               #:break (not tweets))
+          (log-info "@~a: downloaded ~a" screen_name (length tweets))
           (insert-tweets (map prune tweets))))))))
 
 (init-thread-pool get-and-process-tweets #:num-threads (num-threads))
