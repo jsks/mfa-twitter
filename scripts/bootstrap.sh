@@ -6,20 +6,26 @@
 
 setopt err_exit pipe_fail
 
-root=$(git rev-parse --show-toplevel)
-backup="$root/backups/*.tar.gz(om[1])"
+function err() {
+    print $* >&2
+    exit 127
+}
 
-# If we have a backup, grab the latest file and restore. Otherwise, create
-# database from scratch.
-if [[ -z $~backup ]]; then
+# If we're given a directory, attempt to find the latest backup and restore.
+# Otherwise, create database from scratch.
+if [[ -z $1 ]]; then
+    [[ ! -d $1 ]] && err "Invalid backup directory: $1"
+
+    backup="$1/*.zst(om[1])"
+    [[ -n $~backup ]] && err "Unable to find latest backup in $1"
+
     print "Restoring from $~backup"
     zstd -c -d $~backup | pg_restore -h localhost -U postgres -d postgres
-    exit 0
 else
+    print "Creating database from scratch"
     for i in {types,tables,triggers,views}; do
-        f="sql/$i.sql"
-        print "Executing $f"
-        psql -U postgres -h localhost -f $f
+        print "Executing $i.sql"
+        psql -U postgres -h localhost -f sql/$i.sql
     done
 
     # Populate accounts from ref file
