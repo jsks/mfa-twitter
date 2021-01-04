@@ -3,9 +3,11 @@
 ;; TODO: SSL
 
 (require db
+         db/util/datetime
          json
          racket/contract
-         racket/format)
+         racket/format
+         srfi/19)
 
 (provide
  (contract-out
@@ -34,12 +36,15 @@
   (call-with-transaction db-conn proc))
 
 (define (get-accounts)
-  (let ([query @~a{select screen_name, max(tweet_id) from accounts
+  (let ([today (srfi-date->sql-date (current-date))]
+        [query @~a{select screen_name, user_id, max(tweet_id) from accounts
                    left join tweets using (user_id)
-                   where accounts.deleted = false
-                   group by screen_name}])
-    (for/list ([(screen_name since_id) (in-query db-conn query)])
-      (vector screen_name (sql-null->false since_id)))))
+                   where accounts.deleted = false and
+                       ((valid_to is null or valid_to >= $1) and
+                        (valid_from is null or valid_from <= $1))
+                   group by screen_name, user_id}])
+    (for/list ([(screen_name user_id since_id) (in-query db-conn query today)])
+      (vector screen_name user_id (sql-null->false since_id)))))
 
 (define (insert-tweets tweets)
   (for ([tweet (in-list tweets)])
