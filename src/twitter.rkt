@@ -13,9 +13,9 @@
 (provide
  (contract-out
   [access-token (parameter/c string?)]
-  [deleted? (-> (listof (and/c integer? positive?)) (listof boolean?))]
-  [get-timeline (->* (string?)
-                     (#:since_id (or/c (and/c integer? positive?) false/c))
+  [deleted? (-> (listof exact-positive-integer?) (listof boolean?))]
+  [get-timeline (->* (exact-positive-integer?)
+                     (#:since_id (or/c exact-positive-integer? false/c))
                      generator?)]
   [get-media (-> string? path-string? void?)]
   [rate-limit-status (-> (or/c (listof string?) false/c) jsexpr?)]))
@@ -70,23 +70,23 @@
 ;;; API functions
 
 ;; Returns a list with maximum 200 tweets for a given user
-(define (get-tweets screen_name [since_id #f] [max_id #f])
+(define (get-tweets user_id [since_id #f] [max_id #f])
   (define url (mk-api-url "statuses/user_timeline.json"
                           `((count . "200")
                             (trim_user . "true")
                             (exclude_replies . "false")
                             (tweet_mode . "extended")
-                            (screen_name . ,screen_name)
+                            (user_id . ,user_id)
                             (since_id . ,since_id)
                             (max_id . ,max_id))))
   (call/input-url-get url read-json))
 
 ;; Returns a generator to automatically traverse the timeline of a
 ;; given user.
-(define (get-timeline screen_name #:since_id [since_id #f])
+(define (get-timeline user_id #:since_id [since_id #f])
   (generator ()
     (let loop ([max_id #f])
-      (let ([tweets (get-tweets screen_name since_id max_id)])
+      (let ([tweets (get-tweets user_id since_id max_id)])
         (cond [(> (length tweets) 0)
                (yield tweets)
                (loop (sub1 (get-lowest-id tweets)))]
