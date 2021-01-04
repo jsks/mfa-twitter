@@ -115,5 +115,5 @@
 ;; the given resources
 (define (rate-limit-status [resources #f])
   (define url (mk-api-url "application/rate_limit_status.json"
-                          `((resources . ,(string-join resources ",")))))
+                          `((resources . ,(and resources (string-join resources ","))))))
   (call/input-url-get url read-json))
