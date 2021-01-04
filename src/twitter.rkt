@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require json
+         net/head
          net/url
          racket/contract
          racket/format
@@ -37,21 +38,23 @@
 
 ;; Returns the http status code from a single header string
 (define (parse-http-status http-header)
-  (string->number (second (string-split http-header " "))))
+  (string->symbol (second (string-split http-header " "))))
 
 ;; Returns port from GET http request to url or raises an exception if
 ;; the status code is not 200.
-(define (http-get url)
-  (log-debug "Fetching ~a" (~a (url->string url) #:max-width 40))
-  (define-values (port header) (get-pure-port/headers url `(,(access-token)) #:status? #t))
-  (let ([status (parse-http-status header)])
-    (if (= status 200)
-        port
-        (raise (format "Error: ~a" status)))))
+(define (http-impure-get url)
+  (log-debug (format "Fetching ~a" (url->string url)))
+  (get-impure-port url `(,(access-token))))
 
-;; Wrapper function to call http-get.
+;; Wrapper function to call http-impure-get.
 (define (call/input-url-get url proc)
-  (call/input-url url http-get proc))
+  (call/input-url
+   url http-impure-get
+   (λ (port)
+     (let ([status (parse-http-status (purify-port port))])
+       (if (eq? status '|200|)
+           (proc port)
+           (error (format "(http status ~a) ~a" status (extract-api-error port))))))))
 
 ;; Returns the lowest tweet_id from a list of tweets
 (define (get-lowest-id tweets)
@@ -61,11 +64,11 @@
       (if (< id aux) id aux))))
 
 ;; Returns the twitter API error code and message as a string
-(define (twitter-error json)
-  (match (hash-ref json 'errors #f)
+(define (extract-api-error port)
+  (match (hash-ref (read-json port) 'errors #f)
     [(list (hash-table ('code code) ('message message)))
-     (format "Error Code ~a - ~a" code message)]
-    [_ "No associated twitter API error code"]))
+     (format "error code ~a -> ~a" code message)]
+    [_ "no associated twitter API error code"]))
 
 ;;; API functions
 

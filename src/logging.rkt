@@ -6,6 +6,10 @@
          racket/logging
          racket/match)
 
+(provide
+ (contract-out
+  [init-logger (-> log-level/c void?)]))
+
 (current-logger (make-logger 'mfa))
 (date-display-format 'iso-8601)
 
@@ -28,8 +32,10 @@
               [else (print-log data)
                     (loop)]))))))
 
-(let* ([receiver (make-log-receiver (current-logger) 'info)]
-       [receiver-thread (make-receiver-thread receiver)])
-  (executable-yield-handler
-   (lambda (_) (channel-put stop-channel 'stop)
-           (thread-wait receiver-thread))))
+;; Creates log-receiver with the specified level of log verbosity.
+(define (init-logger level)
+  (let* ([receiver (make-log-receiver (current-logger) level)]
+         [receiver-thread (make-receiver-thread receiver)])
+    (executable-yield-handler
+     (lambda (_) (channel-put stop-channel 'stop)
+             (thread-wait receiver-thread)))))
