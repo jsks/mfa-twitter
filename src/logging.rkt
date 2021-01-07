@@ -2,7 +2,6 @@
 
 (require racket/contract
          racket/date
-         racket/function
          racket/logging
          racket/match)
 
@@ -25,7 +24,7 @@
     (let ([data (sync/timeout 0 receiver)])
       (when data (print-log data) (drain))))
   (thread
-   (thunk
+   (λ ()
     (let loop ()
       (let ([data (sync receiver stop-channel)])
         (cond [(eq? data 'stop) (drain)]
@@ -37,5 +36,5 @@
   (let* ([receiver (make-log-receiver (current-logger) level)]
          [receiver-thread (make-receiver-thread receiver)])
     (executable-yield-handler
-     (lambda (_) (channel-put stop-channel 'stop)
-             (thread-wait receiver-thread)))))
+     (λ (_) (channel-put stop-channel 'stop)
+        (thread-wait receiver-thread)))))
