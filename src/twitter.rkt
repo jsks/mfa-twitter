@@ -14,19 +14,19 @@
 (provide
  (contract-out
   [access-token (parameter/c string?)]
-  [deleted? (-> (listof exact-positive-integer?) (listof boolean?))]
   [get-timeline (->* (exact-positive-integer?)
                      (#:since_id (or/c exact-positive-integer? false/c))
                      generator?)]
+  [get-tweets-by-id (-> (listof exact-positive-integer?) hash?)]
   [get-media (-> string? path-string? void?)]
-  [rate-limit-status (-> (or/c (listof string?) false/c) jsexpr?)]))
+  [rate-limit-status (->* () ((or/c (listof string?) false/c)) jsexpr?)]))
 
 (define access-token
   (make-parameter "" (λ (x) (format "Authorization: Bearer ~a" x))))
 
 (define api-base-url "https://api.twitter.com/1.1/")
 
-;;; Utility Functions
+;;; API Utility Functions
 
 ;; Returns a url for a specified twitter api endpoint
 (define (mk-api-url endpoint [params '()])
@@ -68,7 +68,7 @@
   (match (hash-ref (read-json port) 'errors #f)
     [(list (hash-table ('code code) ('message message)))
      (format "error code ~a -> ~a" code message)]
-    [_ "no associated twitter API error code"]))
+    [_ "no twitter API error code"]))
 
 ;;; API functions
 
@@ -90,10 +90,9 @@
   (generator ()
     (let loop ([max_id #f])
       (let ([tweets (get-tweets user_id since_id max_id)])
-        (cond [(> (length tweets) 0)
-               (yield tweets)
-               (loop (sub1 (get-lowest-id tweets)))]
-              [else (yield #f)])))))
+        (when (> (length tweets) 0)
+          (yield tweets)
+          (loop (sub1 (get-lowest-id tweets))))))))
 
 ;; Downloads media asset to a given file.
 (define (get-media media_url file_path)
@@ -101,8 +100,7 @@
          [media (call/input-url-get url port->bytes)])
     (call-with-output-file file_path (λ (p) write-bytes media p))))
 
-;; Returns a list of booleans whether a tweet has been deleted
-(define (deleted? tweet-ids)
+(define (get-tweets-by-id tweet-ids)
   (define ids (string-join (map number->string tweet-ids) ","))
   (define url (mk-api-url "statuses/lookup.json"
                           `((include_entities . "false")
@@ -111,12 +109,12 @@
                             (include_ext_alt_text . "false")
                             (include_card_uri . "false")
                             (id . ,ids))))
-  (let ([results (call/input-url-get url read-json)])
-    (hash-map (hash-ref results 'id) (λ (k v) (eq? v (json-null))))))
+  (call/input-url-get url read-json))
 
 ;; Returns a jsexpr hash table of the current rate limit status for
 ;; the given resources
 (define (rate-limit-status [resources #f])
-  (define url (mk-api-url "application/rate_limit_status.json"
-                          `((resources . ,(and resources (string-join resources ","))))))
+  (define url
+    (mk-api-url "application/rate_limit_status.json"
+                `((resources . ,(and resources (string-join resources ","))))))
   (call/input-url-get url read-json))
