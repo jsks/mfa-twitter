@@ -1,9 +1,10 @@
 #lang racket/base
 
+;; TODO: collect output from threads
+
 (require (for-syntax racket/base syntax/for-body syntax/parse)
          racket/async-channel
-         racket/contract
-         racket/function)
+         racket/contract)
 
 (provide
  for/thread
@@ -51,5 +52,5 @@
 
 ;; TODO: set a timeout to kill running threads
 (define (stop-thread-pool)
-  (for ([thread (in-list threads)]) (async-channel-put input-channel 'stop))
-  (for ([thread (in-list threads)]) (thread-wait thread)))
+  (for ([i (length threads)]) (async-channel-put input-channel 'stop))
+  (for ([th (in-list threads)]) (thread-wait th)))
