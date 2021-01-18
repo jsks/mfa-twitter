@@ -26,7 +26,7 @@
      [("-n" "--num-threads") num
       "Maximum number of concurrent threads [default: 4]"
       (max-threads (string->number num))]
-     #:ps "Available sub-commands: help, sync-timelines, scan-tweets, rate-status"
+     #:ps "Available sub-commands: help, db-status, sync-timelines, scan-tweets, rate-status"
      #:args (sub-command)
      sub-command))
 

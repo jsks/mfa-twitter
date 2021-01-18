@@ -1,4 +1,4 @@
-#lang racket/base
+#lang at-exp racket/base
 
 (require json
          racket/date
@@ -29,6 +29,7 @@
 
   (case command
     [("help") (handle-help)]
+    [("db-status") (handle-db-status)]
     [("sync-timelines") (handle-sync-timelines)]
     [("scan-tweets") (handle-scan-tweets)]
     [("rate-status") (handle-rate-status)]
@@ -38,26 +39,25 @@
      (exit 1)]))
 
 (define (handle-help)
-  (displayln #<<EOF
-Available sub-commands:
-help               Show this message.
-sync-timelines     Update timeline store for all accounts in database.
-scan-tweets        Check if any stored tweets have been deleted and update
-                     engagement numbers
-rate-status        List current rate limits
-EOF
-             ))
+  (displayln
+   @~a{Available sub-commands:
+       help               Show this message.
+       db-status          Brief overview of database statistics
+       sync-timelines     Update timeline store for all accounts in database.
+       scan-tweets        Check if any stored tweets have been deleted and update
+                          engagement numbers
+       rate-status        List current rate limits}))
 
 ;;; Sync Timelines
 
 (define (handle-sync-timelines)
   (for/thread ([account (in-list (get-accounts))])
-    (match-let ([(vector screen_name user_id since_id) account])
-      (with-handlers
-        ([exn:fail? (λ (e) (log-error "@~a ~a" screen_name (exn-message e)))])
-        (let ([total (process-timeline user_id since_id)])
-          (when (> total 0)
-            (log-info "@~a -> downloaded ~a tweet(s)" screen_name total)))))))
+    (match-define (vector screen_name user_id since_id) account)
+    (with-handlers
+      ([exn:fail? (λ (e) (log-error "@~a ~a" screen_name (exn-message e)))])
+      (let ([total (process-timeline user_id since_id)])
+         (when (> total 0)
+           (log-info "@~a -> downloaded ~a tweet(s)" screen_name total))))))
 
 (define (process-timeline user_id since_id)
   (call-with-bound-transaction
@@ -83,25 +83,26 @@ EOF
 
 ;; TODO: log number of deleted tweets
 (define (handle-scan-tweets)
-  (let ([n (~> (rate-limit-status '("statuses"))
-               (select 'resources 'statuses '/statuses/lookup 'remaining)
-               (* 100))])
-    (if (= n 0) (log-error "Rate limit exceeded")
-        (log-info "Updating ~a tweets" n))
-    (for/thread ([tweet-ids (in-slice 100 (get-tweet-ids n))])
-      (with-handlers
-        ([exn:fail? (λ (e) (log-error (exn-message e)))])
-        (call-with-bound-transaction (λ () (process-batch tweet-ids)))))))
+  (define n (~> (rate-limit-status '("statuses"))
+                (select 'resources 'statuses '/statuses/lookup 'remaining)
+                (* 100)))
+
+  (if (= n 0) (log-error "Rate limit exceeded")
+      (log-info "Updating ~a tweets" n))
+
+  (for/thread ([tweet-ids (in-slice 100 (get-tweet-ids n))])
+    (with-handlers
+      ([exn:fail? (λ (e) (log-error (exn-message e)))])
+      (call-with-bound-transaction (λ () (process-batch tweet-ids))))))
 
 (define (process-batch tweet-ids)
-  (let ([tweets (get-tweets-by-id tweet-ids)])
-    (for ([(k tweet) (in-hash (select tweets 'id))])
-      (let ([id (symbol->number k)])
-        (touch-tweet id)
-        (cond [(eq? tweet (json-null)) (set-tweet-deleted id)]
-              [else (update-engagement id
-                                       (select tweet 'favorite_count)
-                                       (select tweet 'retweet_count))])))))
+  (for ([(k tweet) (in-hash (select (get-tweets-by-id tweet-ids) 'id))])
+    (let ([id (symbol->number k)])
+      (touch-tweet id)
+      (cond [(eq? tweet (json-null)) (set-tweet-deleted id)]
+            [else (update-engagement id
+                                     (select tweet 'favorite_count)
+                                   (select tweet 'retweet_count))]))))
 
 ;;; Rate limit status
 
@@ -112,7 +113,9 @@ EOF
                       /application/rate_limit_status))
 
   (define max-endpoint-len
-    (apply max (map (λ (sym) (string-length (symbol->string sym))) endpoints)))
+    (~>> endpoints
+        (map (λ (sym) (string-length (symbol->string sym))))
+        (apply max)))
 
   (define (extract-api-family sym)
     (string->symbol (first (string-split (symbol->string sym) "/"))))
@@ -123,7 +126,21 @@ EOF
               (format-rate-limit l)))))
 
 (define (format-rate-limit tbl)
-    (match tbl
-      [(hash-table ('limit limit) ('remaining remaining) ('reset reset))
-       (format "~a expires ~a" (~a remaining "/" limit #:min-width 10)
-               (date->string (seconds->date reset) #t))]))
+  (match tbl
+    [(hash-table ('limit limit) ('remaining remaining) ('reset reset))
+     (format "~a expires ~a" (~a remaining "/" limit #:min-width 10)
+             (date->string (seconds->date reset) #t))]))
+
+;;; Database status
+
+(define (handle-db-status)
+  (match-define (vector added checked) (activity))
+  (match-define (vector screen_name n) (first (user-stats)))
+
+  (displayln @~a{Total tweets: @(n-tweets)
+                 Total deleted tweets: @(n-deleted)
+                 Total active accounts: @(length (get-accounts))
+
+                 Added in the past 7 days: @added
+                 Checked in the past 7 days: @checked
+                 Most active user in the past 7 days: @"@"@screen_name, @n tweets}))
