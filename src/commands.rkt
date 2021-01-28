@@ -54,7 +54,7 @@
   (for/thread ([account (in-list (get-accounts))])
     (match-define (vector screen_name user_id since_id) account)
     (with-handlers
-      ([exn:fail? (λ (e) (log-error "@~a ~a" screen_name (exn-message e)))])
+      ([exn:fail:twitter? (λ (e) (log-error "@~a ~a" screen_name (exn-message e)))])
       (let ([total (process-timeline user_id since_id)])
          (when (> total 0)
            (log-info "@~a -> downloaded ~a tweet(s)" screen_name total))))))
@@ -92,7 +92,7 @@
 
   (for/thread ([tweet-ids (in-slice 100 (get-tweet-ids n))])
     (with-handlers
-      ([exn:fail? (λ (e) (log-error (exn-message e)))])
+      ([exn:fail:twitter? (λ (e) (log-error (exn-message e)))])
       (call-with-bound-transaction (λ () (process-batch tweet-ids))))))
 
 (define (process-batch tweet-ids)

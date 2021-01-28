@@ -11,7 +11,10 @@
          racket/port
          racket/string)
 
+(require "utils.rkt")
+
 (provide
+ (struct-out exn:fail:twitter)
  (contract-out
   [access-token (parameter/c string?)]
   [get-timeline (->* (exact-positive-integer?)
@@ -28,6 +31,45 @@
 
 ;;; API Utility Functions
 
+;; API error
+(struct exn:fail:twitter exn:fail
+  (http-code
+   http-description
+   api-code
+   api-message) #:transparent)
+
+;; Returns the twitter API error code and message
+(define (extract-error-message json)
+  (match json
+    [(hash-table ('errors (list (hash-table ('code code) ('message message)))))
+     (values code message)]
+    [_ (values #f #f)]))
+
+(define (raise-api-error status description [body #f])
+  (define-values (api-code api-msg) (extract-error-message body))
+  (define error-msg
+    (cond [(or api-code api-msg)
+           (format "HTTP ~a ~a, twitter api ~a ~a" status description api-code api-msg)]
+          [else (format "HTTP ~a ~a" status description)]))
+  (raise (exn:fail:twitter error-msg (current-continuation-marks)
+                           status description api-code api-msg)))
+
+(define (check-response response)
+  (define headers (purify-port response))
+  (define-values (status description) (parse-http-status headers))
+  (when (not (= status 200))
+    (define content-type (extract-field "content-type" headers))
+    (cond [(and content-type (string=? content-type "application/json"))
+           (raise-api-error status description (read-json response))]
+          [else (raise-api-error status description)])))
+
+;; Returns http status code and description from a single header string
+(define (parse-http-status http-header)
+  (match http-header
+    [(pregexp "^HTTP/\\d[.]\\d\\s+(\\d+)\\s+(.*?)\\s*\r\n"
+              (list _ code description))
+     (values (string->number code) (string-trim description))]))
+
 ;; Returns a url for a specified twitter api endpoint
 (define (mk-api-url endpoint [params '()])
   (define url (string->url (string-append api-base-url endpoint)))
@@ -35,10 +77,6 @@
   ;; Filter parameters that are #f and ensure that query values are strings
   (set-url-query! url (filter-map (match-lambda [(cons k v) (and v (cons k (~a v)))]) params))
   url)
-
-;; Returns the http status code from a single header string
-(define (parse-http-status http-header)
-  (string->symbol (second (string-split http-header " "))))
 
 ;; Returns port from GET http request to url or raises an exception if
 ;; the status code is not 200.
@@ -48,13 +86,7 @@
 
 ;; Wrapper function to call http-impure-get.
 (define (call/input-url-get url proc)
-  (call/input-url
-   url http-impure-get
-   (λ (port)
-     (let ([status (parse-http-status (purify-port port))])
-       (if (eq? status '|200|)
-           (proc port)
-           (error (format "(http status ~a) ~a" status (extract-api-error port))))))))
+  (call/input-url url http-impure-get (λ (p) (check-response p) (proc p))))
 
 ;; Returns the lowest tweet_id from a list of tweets
 (define (get-lowest-id tweets)
@@ -62,13 +94,6 @@
             ([tweet (in-list (cdr tweets))])
     (let ([id (hash-ref tweet 'id)])
       (if (< id aux) id aux))))
-
-;; Returns the twitter API error code and message as a string
-(define (extract-api-error port)
-  (match (hash-ref (read-json port) 'errors #f)
-    [(list (hash-table ('code code) ('message message)))
-     (format "error code ~a -> ~a" code message)]
-    [_ "no twitter API error code"]))
 
 ;;; API functions
 
@@ -89,15 +114,14 @@
 (define (get-timeline user_id #:since_id [since_id #f])
   (generator ()
     (let loop ([max_id #f])
-      (let ([tweets (get-tweets user_id since_id max_id)])
-        (when (> (length tweets) 0)
-          (yield tweets)
-          (loop (sub1 (get-lowest-id tweets))))))))
+      (define tweets (get-tweets user_id since_id max_id))
+      (when (> (length tweets) 0)
+        (yield tweets)
+        (loop (sub1 (get-lowest-id tweets)))))))
 
 ;; Downloads media asset to a given file.
 (define (get-media media_url file_path)
-  (let* ([url (string->url media_url)]
-         [media (call/input-url-get url port->bytes)])
+  (let ([media (call/input-url-get (string->url media_url) port->bytes)])
     (call-with-output-file file_path (λ (p) write-bytes media p))))
 
 (define (get-tweets-by-id tweet-ids)
