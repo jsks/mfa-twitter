@@ -11,8 +11,6 @@
          racket/port
          racket/string)
 
-(require "utils.rkt")
-
 (provide
  (struct-out exn:fail:twitter)
  (contract-out
