@@ -6,7 +6,7 @@
 (provide
  (contract-out
   [select (->* (hash?) () #:rest (listof any/c) any/c)]
-  [symbol->number (-> symbol? number?)]))
+  [symbol->number (-> symbol? (or/c number? false/c))]))
 
 (define (select tbl . keys)
   (match keys
