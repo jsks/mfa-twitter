@@ -1,7 +1,7 @@
 src_files = $(wildcard src/*.rkt)
 
 all: launcher
-.PHONY: clean
+.PHONY: clean test
 
 app: mfa
 	raco distribute $@ $<
@@ -17,3 +17,6 @@ src/compiled: $(src_files)
 
 clean:
 	rm -rf app launcher mfa src/compiled
+
+test: clean
+	raco test -j $(shell nproc) test
