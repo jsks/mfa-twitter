@@ -44,7 +44,8 @@ user_id,screen_name,country,valid_from,valid_to,account_type
 1183694592433983489,MFA_China,"People's Republic of China",,,mfa
 164213375,IndianDiplomacy,"India",,,mfa
 179181381,annlinde,Sweden,2019-09-10,,foreign_minister
-988573326376427520,SecPompeo,"United States of America",2018-04-26,,foreign_minister
+988573326376427520,SecPompeo,"United States of America",2018-04-26,2021-01-20,foreign_minister
+1350150750966603777,SecBlinken,"United States of America",2021-01-26,,foreign_minister
 306974174,MFAgovge,Georgia,,,mfa
 461005402,AzerbaijanMFA,Azerbaijan,,,mfa
 532121906,MFAofArmenia,Armenia,,,mfa
