@@ -16,7 +16,7 @@
          "utils.rkt")
 
 (provide
- max-threads
+ num-threads
  (contract-out [dispatch (-> string? hash? void?)]))
 
 (date-display-format 'iso-8601)
