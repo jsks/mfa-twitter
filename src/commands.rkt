@@ -81,15 +81,16 @@
 
 ;;; Scan tweets
 
-;; TODO: log number of deleted tweets
 (define (handle-scan-tweets)
   (define n (~> (rate-limit-status '("statuses"))
                 (select 'resources 'statuses '/statuses/lookup 'remaining)
                 (* 100)))
+  (cond [(= n 0) (log-error "Rate limit exceeded")]
+        [else
+         (log-info "Scanning ~a tweets" n)
+         (scan-tweets n)]))
 
-  (if (= n 0) (log-error "Rate limit exceeded")
-      (log-info "Updating ~a tweets" n))
-
+(define (scan-tweets n)
   (for/thread ([tweet-ids (in-slice 100 (get-tweet-ids n))])
     (with-handlers
       ([exn:fail:twitter? (λ (e) (log-error (exn-message e)))])
@@ -97,12 +98,12 @@
 
 (define (process-batch tweet-ids)
   (for ([(k tweet) (in-hash (select (get-tweets-by-id tweet-ids) 'id))])
-    (let ([id (symbol->number k)])
-      (touch-tweet id)
-      (cond [(eq? tweet (json-null)) (set-tweet-deleted id)]
-            [else (update-engagement id
-                                     (select tweet 'favorite_count)
-                                   (select tweet 'retweet_count))]))))
+    (define id (symbol->number k))
+    (touch-tweet id)
+    (cond [(eq? tweet (json-null)) (set-tweet-deleted id)]
+          [else (update-engagement id
+                                   (select tweet 'favorite_count)
+                                   (select tweet 'retweet_count))])))
 
 ;;; Rate limit status
 

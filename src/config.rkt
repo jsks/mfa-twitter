@@ -35,7 +35,7 @@
 (define (load-config file)
   (define config-args (make-hash))
   (call-with-input-file file
-    (lambda (port)
+    (λ (port)
       (for ([line (in-lines port)]
             #:when (config-line? line))
         (let-values ([(key value) (split-once #rx" *= *" line)])
