@@ -4,30 +4,100 @@
 # all SQL artefacts from scratch.
 ###
 
+emulate -R zsh
 setopt err_exit pipe_fail
 
+if [[ $ZSH_VERSION < 5.8 ]]; then
+    print "$ZSH_SCRIPT requires >=zsh-5.8"
+    exit 113
+fi
+
+zmodload zsh/zutil
+
+PG_OPTS='-h ${PGHOST:-localhost} -U ${PGUSER:-postgres} -p ${PORT:-5432}
+         -d ${DBNAME:-postgres}'
+readonly proj_root=${0:a:h:h}
+
 function err() {
-    print $* >&2
+    print -u 2 $*
     exit 127
 }
 
-# If we're given a directory, attempt to find the latest backup and restore.
-# Otherwise, create database from scratch.
-if [[ -z $1 ]]; then
-    [[ ! -d $1 ]] && err "Invalid backup directory: $1"
+function help() {
+<<EOF
+$(usage)
+
+Populate a running postgres instance. If DIR is provided, restore the latest
+zst archive backup from the specified directory. Otherwise, create all SQL
+artefacts from scratch using the scripts in $proj_root/sql.
+
+Options:
+    -c | --clear        Drop all objects before recreating database.
+    -d | --dbname       Database name to connect to.
+    -h | --host         Host address for postgres instance.
+    -p | --port         Port that postgres is listening on.
+    -t | --testing      Insert testing data intended for integration tests.
+    -u | --user         Username to connect to postgres.
+    -W | --password     Password to connect to postgres.
+    --help              This help message.
+EOF
+
+exit
+}
+
+function usage() {
+    print "Usage: $ZSH_SCRIPT [OPTION]... [DIR]"
+}
+
+zparseopts -A opts -D -E -F - -help c -clear t -testing u: -user: d: -dbname: \
+    h: -host: p: -port: W: -password: || { usage >&2; exit 127 }
+
+for i in ${(k)opts}; do
+    case $i in
+        ("--help")
+            help;;
+        ("--dbname"|"-d")
+            DBNAME=$opts[$i];;
+        ("--host"|"-h")
+            PGHOST=$opts[$i];;
+        ("--port"|"-p")
+            if [[ $opts[$i] == <-> ]]; then
+                PORT=$opts[$i]
+            else
+                error "Invalid port number: $opts[$i]"
+            fi;;
+        ("--user"|"-u")
+            PGUSER=$opts[$i];;
+        ("--password"|"-W")
+            PGPASS=$opts[$i]
+            PG_OPTS+=' -W $PGPASS';;
+    esac
+done
+
+if [[ ${(k)opts[(i)*-c*]} != "" ]]; then
+    read -sq key\?"This is a destructive process. Continue? "
+    printf '\n'
+    dropdb ${(e)=PG_OPTS//-d/}
+    createdb ${(e)=PG_OPTS//-d/}
+fi
+
+if [[ -n $1 && ${(k)opts[(i)*-t*]} == "" ]]; then
+    [[ ! -d $1 ]] && err "Invalid backup directory : $1"
 
     backup="$1/*.zst(om[1])"
-    [[ -n $~backup ]] && err "Unable to find latest backup in $1"
+    [[ -z $~backup ]] && err "Unable to find *.zst backup in $1"
 
-    print "Restoring from $~backup"
-    zstd -c -d $~backup | pg_restore -h localhost -U postgres -d postgres
+    print -- Restoring from $~backup
+    zstd -c -d $~backup | pg_restore -C ${(e)=PG_OPTS}
 else
     print "Creating database from scratch"
-    for i in {types,tables,triggers,views}; do
-        print "Executing $i.sql"
-        psql -U postgres -h localhost -f sql/$i.sql
-    done
+    ! psql ${(e)=PG_OPTS} -c '\q' 2>/dev/null && createdb ${(e)=PG_OPTS//-d/}
+    for i in {types,tables,triggers,views}; psql ${(e)=PG_OPTS} -f sql/$i.sql
 
-    # Populate accounts from ref file
-    psql -h localhost -U postgres -f sql/populate_accounts.sql
+    if [[ ${(k)opts[(i)*-t*]} != "" ]]; then
+        print "Bootstrapping testing instance"
+        psql ${(e)=PG_OPTS} -f test/data/data.sql
+    else
+        psql ${(e)=PG_OPTS} -f sql/populate_accounts.sql
+    fi
 fi
