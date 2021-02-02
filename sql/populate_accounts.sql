@@ -20,4 +20,5 @@ with translated_data as (
     join account_type on accounts_local.account_type = account_type.type_text
 )
 insert into accounts (user_id, screen_name, country, valid_from, valid_to, account_type_id)
-select * from translated_data;
+select * from translated_data
+on conflict do nothing;
