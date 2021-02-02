@@ -18,12 +18,43 @@ create table if not exists tweets (
     json jsonb not null
 );
 
-create table if not exists relations (
-    user_id bigint references accounts (user_id),
-    target_id bigint not null,
-    target_name text not null,
-    relation_type_id int references relation_type (type_id),
+create table if not exists engagement (
+    tweet_id bigint primary key references tweets (tweet_id),
+    favorite_count bigint not null default 0,
+    retweet_count bigint not null default 0
+);
+
+-- TODO: when bootstrapping ensure that file links are valid
+create table if not exists media (
+    media_id bigint primary key,
+    tweet_id bigint references tweets (tweet_id),
+    file_path text,
+    media_type_id int references media_type (type_id),
+    not_found boolean default false
+);
+
+create table if not exists profiles (
+    user_id bigint not null,
+    name text,
+    screen_name text not null,
+    description text,
+    verified boolean default false,
+    friends_count bigint default 0,
+    followers_count bigint default 0,
+    statuses_count bigint default 0,
+    created_at timestamp not null,
     added timestamp not null default now(),
     version_id int not null check(version_id > 0),
-    primary key (version_id, user_id, target_id, relation_type_id)
+    primary key (user_id, version_id)
+);
+
+create table if not exists friends (
+    user_id bigint references accounts (user_id),
+    friend_id bigint not null,
+    added timestamp not null default now(),
+    version_id int not null check(version_id > 0),
+    friend_version_id int not null,
+    primary key (user_id, friend_id, version_id),
+    foreign key (friend_id, friend_version_id) references
+        profiles (user_id, version_id)
 );
