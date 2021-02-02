@@ -14,8 +14,10 @@ fi
 
 zmodload zsh/zutil
 
-PG_OPTS='-h ${PGHOST:-localhost} -U ${PGUSER:-postgres} -p ${PORT:-5432}
-         -d ${DBNAME:-postgres}'
+export PGHOST="localhost"
+export PGDATABASE="postgres"
+export PGUSER="postgres"
+
 readonly proj_root=${0:a:h:h}
 
 function err() {
@@ -57,28 +59,27 @@ for i in ${(k)opts}; do
         ("--help")
             help;;
         ("--dbname"|"-d")
-            DBNAME=$opts[$i];;
+            export PGDATABASE=$opts[$i];;
         ("--host"|"-h")
-            PGHOST=$opts[$i];;
+            export PGHOST=$opts[$i];;
         ("--port"|"-p")
             if [[ $opts[$i] == <-> ]]; then
-                PORT=$opts[$i]
+                export PGPORT=$opts[$i]
             else
                 error "Invalid port number: $opts[$i]"
             fi;;
         ("--user"|"-u")
-            PGUSER=$opts[$i];;
+            export PGUSER=$opts[$i];;
         ("--password"|"-W")
-            PGPASS=$opts[$i]
-            PG_OPTS+=' -W $PGPASS';;
+            export PGPASSWORD=$opts[$i];;
     esac
 done
 
 if [[ ${(k)opts[(i)*-c*]} != "" ]]; then
     read -sq key\?"This is a destructive process. Continue? "
     printf '\n'
-    dropdb ${(e)=PG_OPTS//-d/}
-    createdb ${(e)=PG_OPTS//-d/}
+    dropdb -w $PGDATABASE
+    createdb -w $PGDATABASE
 fi
 
 if [[ -n $1 && ${(k)opts[(i)*-t*]} == "" ]]; then
@@ -88,16 +89,16 @@ if [[ -n $1 && ${(k)opts[(i)*-t*]} == "" ]]; then
     [[ -z $~backup ]] && err "Unable to find *.zst backup in $1"
 
     print -- Restoring from $~backup
-    zstd -c -d $~backup | pg_restore -C ${(e)=PG_OPTS}
+    zstd -c -d $~backup | pg_restore -w -C
 else
     print "Creating database from scratch"
-    ! psql ${(e)=PG_OPTS} -c '\q' 2>/dev/null && createdb ${(e)=PG_OPTS//-d/}
-    for i in {types,tables,triggers,views}; psql ${(e)=PG_OPTS} -f sql/$i.sql
+    ! psql -w -c '\q' 2>/dev/null && createdb -w $PGDATABASE
+    for i in {types,tables,triggers,views}; psql -w -f sql/$i.sql
 
     if [[ ${(k)opts[(i)*-t*]} != "" ]]; then
         print "Bootstrapping testing instance"
-        psql ${(e)=PG_OPTS} -f test/data/data.sql
+        psql -w -f test/data/data.sql
     else
-        psql ${(e)=PG_OPTS} -f sql/populate_accounts.sql
+        psql -w -f sql/populate_accounts.sql
     fi
 fi

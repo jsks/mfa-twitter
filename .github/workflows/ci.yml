@@ -2,18 +2,37 @@ name: CI
 on: [push]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         racket-version: [ 'stable', 'current' ]
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: test
+          POSTGRES_DATABASE: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     name: Racket ${{ matrix.racket-version }}
     steps:
-      - uses: actions/checkout@master
+      - name: Check out repository
+        uses: actions/checkout@master
       - name: Setup Racket
         uses: Bogdanp/setup-racket@v0.13
         with:
           architecture: x64
           version: ${{ matrix.racket-version }}
           packages: 'threading'
+      - name: Install zsh
+        run: sudo apt-get install zsh
+      - name: Setup postgres
+        run: zsh scripts/bootstrap.sh --testing -u test -W postgres
       - name: Run tests
-        run: make test
+        run: raco test --submodule integration test

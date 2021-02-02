@@ -46,7 +46,8 @@
         (raise (exn:fail "fail" (current-continuation-marks)))))))
   (check-eq? (n-tweets) 3)
 
-  (define db-conn (postgresql-connect #:user "test" #:database "postgres"))
+  (define db-conn
+    (postgresql-connect #:user "test" #:password "postgres" #:database "postgres"))
 
   (check-equal?
    (query-value db-conn @~a{select json from tweets where tweet_id = 300})

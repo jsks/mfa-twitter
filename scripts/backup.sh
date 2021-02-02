@@ -13,8 +13,9 @@ fi
 
 zmodload zsh/zutil
 
-PG_OPTS='-h ${PGHOST:-localhost} -U ${PGUSER:-postgres} -p ${PORT:-5432}
-         -d ${DBNAME:-postgres}'
+export PGHOST="localhost"
+export PGDATABASE="postgres"
+export PGUSER="postgres"
 
 function err() {
     print -u 2 $*
@@ -52,20 +53,19 @@ for i in ${(k)opts}; do
         ("--help")
             help;;
         ("--dbname"|"-d")
-            DBNAME=$opts[$i];;
+            export PGDATABASE=$opts[$i];;
         ("--host"|"-h")
-            PGHOST=$opts[$i];;
+            export PGHOST=$opts[$i];;
         ("--port"|"-p")
             if [[ $opts[$i] == <-> ]]; then
-                PORT=$opts[$i]
+                export PGPORT=$opts[$i]
             else
                 error "Invalid port number: $opts[$i]"
             fi;;
         ("--user"|"-u")
-            PGUSER=$opts[$i];;
+            export PGUSER=$opts[$i];;
         ("--password"|"-W")
-            PGPASS=$opts[$i]
-            PG_OPTS+=' -W $PGPASS';;
+            export PGPASSWORD=$opts[$i];;
     esac
 done
 
@@ -73,4 +73,4 @@ done
 backup="$1/db_$(date +'%Y-%m-%d').zst"
 
 print "Creating ${(D)backup}"
-pg_dump -Fc ${(e)=PG_OPTS} -Z 0 | zstdmt -T0 -16 > $backup
+pg_dump -w -Fc ${(e)=PG_OPTS} -Z 0 | zstdmt -T0 -16 > $backup
