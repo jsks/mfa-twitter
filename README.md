@@ -1,5 +1,7 @@
 # MFA Twitter Scraping
 
+![ci workflow](https://github.com/jsks/mfa-twitter/actions/workflows/ci.yml/badge.svg)
+
 Project collecting tweets from officially verified foreign ministry
 accounts.
 
