@@ -3,6 +3,7 @@ refs/*
 
 /**/compiled/
 
+launcher
 main
 mfa
 queries.sql
