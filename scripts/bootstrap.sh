@@ -89,7 +89,7 @@ if [[ -n $1 && ${(k)opts[(i)*-t*]} == "" ]]; then
     [[ -z $~backup ]] && err "Unable to find *.zst backup in $1"
 
     print -- Restoring from $~backup
-    zstd -c -d $~backup | pg_restore -w -C
+    zstd -c -d $~backup | pg_restore -w -C -d $PGDATABASE
 else
     print "Creating database from scratch"
     ! psql -w -c '\q' 2>/dev/null && createdb -w $PGDATABASE
