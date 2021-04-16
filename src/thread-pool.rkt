@@ -14,13 +14,13 @@
 (struct thread-pool (threads input output) #:transparent)
 
 (define-syntax (for/thread stx)
-  (for_/thread/collect stx void #f))
+  (for_/thread/collect stx #'void #f))
 
 (define-syntax (for/thread/list stx)
-  (for_/thread/collect stx cons '()))
+  (for_/thread/collect stx #'cons '()))
 
 (define-syntax (for/thread/sum stx)
-  (for_/thread/collect stx + 0))
+  (for_/thread/collect stx #'+ 0))
 
 (define-for-syntax (for_/thread/collect stx proc init)
   (define-splicing-syntax-class for-clause
