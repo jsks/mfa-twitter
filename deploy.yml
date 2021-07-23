@@ -1,0 +1,24 @@
+---
+- name: Deploy twitter scraping code
+  hosts: all
+  become: yes
+  tasks:
+    - name: Create app user
+      user:
+        name: mfa
+        shell: /usr/bin/false
+        system: yes
+
+    - name: Copy and extract release tarball
+      unarchive:
+        dest: /usr/local/
+        src: mfa-{{ version }}.tar.gz
+        owner: root
+        group: root
+
+    - name: Enable timeline scraping timer
+      systemd:
+        daemon_reload: yes
+        name: timeline.timer
+        enabled: yes
+        state: started
