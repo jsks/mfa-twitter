@@ -8,7 +8,7 @@
   tasks:
     - name: Create app user
       user:
-        name: app
+        name: mfa
         create_home: no
         shell: /bin/bash
         system: yes

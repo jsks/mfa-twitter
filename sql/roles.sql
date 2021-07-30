@@ -1,11 +1,11 @@
 do $$
 begin
-    if not exists (select from pg_catalog.pg_roles where rolname = 'app') then
-        create role app login noinherit;
-        grant insert, update, select on tweets, engagement to app;
-        grant select on accounts, atweets to app;
+    if not exists (select from pg_catalog.pg_roles where rolname = 'mfa') then
+        create role mfa login noinherit;
+        grant insert, update, select on tweets, engagement to mfa;
+        grant select on accounts, atweets to mfa;
     else
-        raise notice 'Role "app" already exists, skipping';
+        raise notice 'Role "mfa" already exists, skipping';
     end if;
 
     if not exists (select from pg_catalog.pg_roles where rolname = 'anon') then

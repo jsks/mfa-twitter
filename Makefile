@@ -35,5 +35,5 @@ exe:
 clean:
 	rm -rf $(archive) $(build_dir) mfa
 
-test: clean
+test:
 	raco test -j $(shell nproc) test
