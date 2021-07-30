@@ -1,12 +1,16 @@
 ---
 - name: Deploy twitter scraping code
-  hosts: all
   become: yes
+  hosts: all
+  vars:
+    bindir: /usr/local/bin
+    datadir: /usr/local/share
   tasks:
     - name: Create app user
       user:
-        name: mfa
-        shell: /usr/bin/false
+        name: app
+        create_home: no
+        shell: /bin/bash
         system: yes
 
     - name: Copy and extract release tarball
@@ -15,6 +19,10 @@
         src: mfa-{{ version }}.tar.zst
         owner: root
         group: root
+
+    - name: Bootstrap postgres database
+      become_user: dev
+      shell: "{{ bindir }}/bootstrap.sh -h '' -u dev -d db -a {{ datadir }}/mfa/accounts.csv -s {{ datadir }}/mfa/sql"
 
     - name: Enable timeline scraping timer
       systemd:

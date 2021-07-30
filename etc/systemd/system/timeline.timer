@@ -1,0 +1,10 @@
+[Unit]
+Description=Project timer, runs every 2 hours
+After=network.target
+
+[Timer]
+OnCalendar=0/2:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

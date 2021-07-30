@@ -7,7 +7,8 @@ create temp table accounts_local (
     account_type text
 );
 
-\copy accounts_local (user_id, screen_name, country, valid_from, valid_to, account_type) from 'refs/accounts.csv' delimiter ',' csv header
+\set command '\\copy accounts_local (user_id, screen_name, country, valid_from, valid_to, account_type) from ' :'accounts_file' ' delimiter \',\' csv header'
+:command
 
 with translated_data as (
     select user_id,

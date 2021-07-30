@@ -1,0 +1,8 @@
+[Unit]
+Description=Service file syncing twitter target timelines
+
+[Service]
+User=mfa
+Group=mfa
+Type=oneshot
+ExecStart=/usr/local/bin/mfa sync-timelines
