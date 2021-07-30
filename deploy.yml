@@ -12,7 +12,7 @@
     - name: Copy and extract release tarball
       unarchive:
         dest: /usr/local/
-        src: mfa-{{ version }}.tar.gz
+        src: mfa-{{ version }}.tar.zst
         owner: root
         group: root
 

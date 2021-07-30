@@ -16,7 +16,7 @@ deploy: dist
 	ansible-playbook -i inventory --extra-vars "version=$(version)" deploy.yml
 
 dist: build
-	tar -C $(build_dir) -czvf $(archive) .
+	tar -C $(build_dir) -acf $(archive) .
 
 build: clean
 	podman pull $(image)
