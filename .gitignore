@@ -3,6 +3,9 @@ refs/*
 
 /**/compiled/
 
+backups/
+build/
+
 launcher
 main
 mfa
@@ -11,3 +14,4 @@ queries.sql
 /**/*.json
 /**/*.org
 /**/*.tar.gz
+/**/*.tar.zst
