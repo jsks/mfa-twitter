@@ -24,9 +24,12 @@
       become_user: dev
       shell: "{{ bindir }}/bootstrap.sh -h '' -u dev -d db -a {{ datadir }}/mfa/accounts.csv -s {{ datadir }}/mfa/sql"
 
-    - name: Enable timeline scraping timer
+    - name: Start systemd services
       systemd:
         daemon_reload: yes
-        name: timeline.timer
+        name: "{{ item }}.timer"
         enabled: yes
         state: started
+      loop:
+        - scan
+        - timeline

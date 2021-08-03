@@ -1,9 +1,9 @@
 [Unit]
-Description=MFA scraping timer, runs every two hours
+Description=MFA scan tweets timer, runs once an hour
 After=network.target
 
 [Timer]
-OnCalendar=0/2:00:00
+OnCalendar=0,6,12,18:30:00
 RandomizedDelaySec=5m
 Persistent=true
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=Service file syncing twitter target timelines
+Description=Scrape twitter target timelines
 
 [Service]
 User=mfa

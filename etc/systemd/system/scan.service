@@ -1,0 +1,8 @@
+[Unit]
+Description=Check tweet deletion and update engagement stats
+
+[Service]
+User=mfa
+Group=mfa
+Type=oneshot
+ExecStart=/usr/local/bin/mfa scan-tweets
