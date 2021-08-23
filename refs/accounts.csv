@@ -34,6 +34,7 @@ user_id,screen_name,country,valid_from,valid_to,account_type
 133272363,MFABulgaria,Bulgaria,,,mfa
 295642096,MFAKOSOVO,Kosovo,,,mfa
 2860575411,SRBDiplomacy,Serbia,,,mfa/news
+1344551257789374464,MFASerbia,Serbia,,,mfa
 82612059,MAERomania,Romania,,,mfa
 875062916,MoldovaMFA,Moldova,,,mfa
 3068668348,abouthungary,Hungary,,,mfa/news
@@ -42,7 +43,7 @@ user_id,screen_name,country,valid_from,valid_to,account_type
 14353202,FCDOGovUK,"United Kingdom",,,mfa
 9624742,StateDept,"United States of America",,,mfa
 1183694592433983489,MFA_China,"People's Republic of China",,,mfa
-164213375,IndianDiplomacy,"India",,,mfa
+164213375,IndianDiplomacy,India,,,mfa
 179181381,annlinde,Sweden,2019-09-10,,foreign_minister
 988573326376427520,SecPompeo,"United States of America",2018-04-26,2021-01-20,foreign_minister
 1350150750966603777,SecBlinken,"United States of America",2021-01-26,,foreign_minister
@@ -66,7 +67,8 @@ user_id,screen_name,country,valid_from,valid_to,account_type
 1062629132515848192,ForeignYemen,Yemen,,,mfa
 1051066584100429824,IRIMFA_EN,Iran,,,mfa
 454624163,mfa_afghanistan,Afghanistan,,,mfa
-314479335,ForeignOfficePk,Pakistan,,,mfa
+314479335,ForeignOfficePk,Pakistan,,,spokesperson
+517943270,FMPublicDiploPK,Pakistan,,,mfa
 1411941818,MFA_SriLanka,"Sri Lanka",,,mfa
 3037333860,MofaNepal,Nepal,,,mfa
 1072010552682012673,FMBhutan,Bhutan,,,foreign_minister
@@ -79,3 +81,37 @@ user_id,screen_name,country,valid_from,valid_to,account_type
 160858057,Kemlu_RI,Indonesia,,,mfa
 273730280,dfat,Australia,,,mfa
 1611641605,MFATNZ,"New Zealand",,,mfa
+2963731179,mfaegypt,Egypt,,,mfa
+1039781970119741440,mfatunisia,Tunisia,,,mfa
+1279917380710346752,Algeria_MFA,Algeria,,,mfa
+2919314966,MoFAmv,Maldives,,,mfa
+1082050273156218885,MaliMaeci,Mali,,,mfa
+1119162738700238848,DiplomatieN,Niger,,,mfa
+1088811549152759809,ChadianMFA,Chad,,,mfa
+2417342988,MofaSudan,Sudan,,,mfa
+1294565055632113664,MFASouthSudan,"South Sudan",,,mfa
+1252987862,MofaSomalia,Somalia,,,mfa
+1221534859,mfaethiopia,Ethiopia,,,mfa
+3047069627,diplocam_minrex,Cameroon,,,mfa
+956194281978507270,NigeriaMFA,Nigeria,,,mfa
+827250060027129856,BeninDiplomatie,Benin,,,mfa
+884094074180993025,DiplomatieTogo,Togo,,,mfa
+2668740925,GhanaMFA,Ghana,,,mfa
+706482878251712512,BurkinaMae,"Burkina Faso",,,mfa
+1280162996002656256,MFAIC_SL,"Sierra Leone",,,mfa
+1352930981540483072,MaeseSenegal,Senegal,,,mfa
+1143568668447662080,OfficialMofa,"The Gambia",,,mfa
+1313155545633828864,DiplomatieGabon,Gabon,,,mfa
+1617829765,UgandaMFA,Uganda,,,mfa
+1447305066,ForeignOfficeKE,Kenya,,,mfa
+358059957,RwandaMFA,Rwanda,,,mfa
+3759390373,MAEBurundi,Burundi,,,mfa
+2341682708,foreigntanzania,Tanzania,,,mfa
+709074150476931072,ForeignMalawi,Malawi,,,mfa
+1108636916499603456,MoFA_ZW,Zimbabwe,,,mfa
+960107639479906304,angola_Mirex,Angola,,,mfa
+874956617409855488,MIRCO_NAMIBIA,Namibia,,,mfa
+3003300111,DIRCO_ZA,"South Africa",,,mfa
+1090522024919871488,ForeignLesotho,Lesotho,,,mfa
+1349306629032914944,MfaicSd,Eswatini,,,mfa
+4722098068,diplomatieMg,Madagascar,,,mfa
