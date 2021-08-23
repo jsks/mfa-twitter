@@ -62,7 +62,7 @@
 (define (process-timeline user_id since_id)
   (call-with-bound-transaction
    (λ ()
-     (for/sum ([tweets (in-producer (get-timeline user_id #:since_id since_id) (void))])
+     (for/sum ([tweets (in-producer (gen/timeline user_id #:since_id since_id) (void))])
        (for ([tweet (in-list tweets)])
          (insert-tweet (prune tweet))
          (update-engagement (select tweet 'id)

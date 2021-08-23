@@ -15,7 +15,7 @@
  (struct-out exn:fail:twitter)
  (contract-out
   [access-token (parameter/c string?)]
-  [get-timeline (->* (exact-positive-integer?)
+  [gen/timeline (->* (exact-positive-integer?)
                      (#:since_id (or/c exact-positive-integer? false/c))
                      generator?)]
   [get-tweets-by-id (-> (listof exact-positive-integer?) hash?)]
@@ -109,7 +109,7 @@
 
 ;; Returns a generator to automatically traverse the timeline of a
 ;; given user.
-(define (get-timeline user_id #:since_id [since_id #f])
+(define (gen/timeline user_id #:since_id [since_id #f])
   (generator ()
     (let loop ([max_id #f])
       (define tweets (get-tweets user_id since_id max_id))

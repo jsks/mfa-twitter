@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require net/url
+         racket/generator
          racket/match
          rackunit)
 
