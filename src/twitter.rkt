@@ -120,7 +120,7 @@
 ;; Downloads media asset to a given file.
 (define (get-media media_url file_path)
   (let ([media (call/input-url-get (string->url media_url) port->bytes)])
-    (call-with-output-file file_path (λ (p) write-bytes media p))))
+    (call-with-output-file file_path (λ (p) (write-bytes media p)))))
 
 (define (get-tweets-by-id tweet-ids)
   (define ids (string-join (map number->string tweet-ids) ","))
