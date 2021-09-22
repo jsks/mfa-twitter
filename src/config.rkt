@@ -40,7 +40,7 @@
       (for ([line (in-lines port)]
             #:when (config-line? line))
         (let*-values ([(key value) (split-once #rx" *= *" line)]
-                      [(sanitized-value) (strip value)])
+                      [(sanitized-value) (strip-quotes value)])
           (if (eq? key 'pg_socket)
               (hash-set! key (match sanitized-value
                                ["false" #f]
