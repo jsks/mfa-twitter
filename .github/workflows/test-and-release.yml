@@ -42,8 +42,8 @@ jobs:
         run: raco test --submodule integration test
 
   release:
-    if: github.refs == 'refs/heads/production'
     needs: test
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
