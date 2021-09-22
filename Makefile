@@ -1,6 +1,7 @@
 SHELL = /bin/bash -o pipefail
 
-version   := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "alpha")
+container_runner ?= podman
+version          ?= $(shell echo `date +'%Y-%m-%d'`-`git rev-parse --short HEAD`)
 
 build_dir := build
 bindir    := $(build_dir)/bin
@@ -29,7 +30,7 @@ copy:
 	@sed -i -e '/^source.*/r scripts/base.sh' -e 's///' $(bindir)/bootstrap.sh
 
 exe:
-	podman run --rm -v $(CURDIR):/usr/local/src -it $(image) \
+	$(container_runner) run --rm -v $(CURDIR):/usr/local/src $(image) \
 		bash -c "raco exe -o mfa src/main.rkt && raco distribute $(build_dir) mfa"
 
 clean:
