@@ -10,8 +10,12 @@
 (provide
  (contract-out
   [call-with-bound-transaction (-> (-> any) any)]
-  [init-db (-> #:user string? #:password string? #:database string? void?)]
   [activity (-> vector?)]
+  [init-db (-> #:user string?
+               #:password string?
+               #:database string?
+               #:socket (or/c path-string? 'guess #f)
+               void?)]
   [insert-tweet (-> jsexpr? void?)]
   [get-accounts (-> (listof vector?))]
   [get-tweet-ids (-> exact-nonnegative-integer? (listof integer?))]
@@ -23,20 +27,22 @@
                          exact-nonnegative-integer? void?)]
   [user-stats (-> (listof vector?))]))
 
-(struct db-settings (user database password) #:mutable)
-(define credentials (db-settings "" "" ""))
+(struct db-settings (user database password socket) #:mutable)
+(define creds (db-settings "" "" "" #f))
 
-(define (init-db #:user user #:password password #:database database)
-  (set-db-settings-user! credentials user)
-  (set-db-settings-password! credentials password)
-  (set-db-settings-database! credentials database))
+(define (init-db #:user user #:password password #:database database #:socket socket)
+  (set-db-settings-user! creds user)
+  (set-db-settings-password! creds password)
+  (set-db-settings-database! creds database)
+  (set-db-settings-socket! creds socket))
 
 (define db-conn
   (virtual-connection
    (connection-pool
-    (λ () (postgresql-connect #:user (db-settings-user credentials)
-                              #:database (db-settings-database credentials)
-                              #:password (db-settings-password credentials))))))
+    (λ () (postgresql-connect #:user (db-settings-user creds)
+                              #:database (db-settings-database creds)
+                              #:password (db-settings-password creds)
+                              #:socket (db-settings-socket creds))))))
 
 (define (call-with-bound-transaction proc)
   (call-with-transaction db-conn proc))

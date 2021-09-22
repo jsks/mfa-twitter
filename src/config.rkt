@@ -11,7 +11,8 @@
 (define required-fields '(access_token
                           pg_user
                           pg_password
-                          pg_database))
+                          pg_database
+                          pg_socket))
 
 (define (strip-quotes str)
   (string-trim str "\""))
@@ -38,7 +39,13 @@
     (λ (port)
       (for ([line (in-lines port)]
             #:when (config-line? line))
-        (let-values ([(key value) (split-once #rx" *= *" line)])
-          (hash-set! config-args key (strip-quotes value))))))
+        (let*-values ([(key value) (split-once #rx" *= *" line)]
+                      [(sanitized-value) (strip value)])
+          (if (eq? key 'pg_socket)
+              (hash-set! key (match sanitized-value
+                               ["false" #f]
+                               ["true" 'guess]
+                               [_ sanitized-value]))
+              (hash-set! key sanitized-value))))))
   (validate config-args)
   config-args)

@@ -13,7 +13,8 @@
 
   (init-db #:user "test"
            #:password "postgres"
-           #:database "postgres")
+           #:database "postgres"
+           #:socket #f)
 
   (check-eq? (length (get-accounts)) 2)
   (check-eq? (n-tweets) 2)
