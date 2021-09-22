@@ -1,0 +1,31 @@
+name: Release builder
+on:
+  push:
+    branches: [ production ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set tag name
+        id: set-tag
+        run: echo '::set-output name=name value::$(date +"%Y-%m-%d)-$(head -c 6 ${{ GITHUB_SHA }})'
+
+      - name: Install make
+        run: sudo apt-get install make
+
+      - name: Pull docker image
+        run: docker pull ghcr.io/${{ github.repository_owner }}/racket-build
+
+      - name: Build release tarball
+        run: make build
+
+      - name: Create a new tag
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          tag_name: ${{ steps.set-tag.name }}
+          files: mfa
