@@ -25,7 +25,8 @@
   (access-token (hash-ref args 'access_token))
   (init-db #:user (hash-ref args 'pg_user)
            #:password (hash-ref args 'pg_password)
-           #:database (hash-ref args 'pg_database))
+           #:database (hash-ref args 'pg_database)
+           #:socket (hash-ref args 'pg_socket))
 
   (case command
     [("help") (handle-help)]
