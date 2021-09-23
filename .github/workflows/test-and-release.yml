@@ -56,10 +56,17 @@ jobs:
       - name: Install make
         run: sudo apt-get install make
 
+      - name: Inject configuration variables
+        run: |
+          sed -i -e '/^pg_database/s/".*"/"${{ secrets.PG_DATABASE }}"/' \
+                 -e '/^pg_user/s/".*"/"${{ secrets.PG_USER }}"/' \
+                 -e '/^pg_socket/s/".*"/"${{ secrets.PG_SOCKET }}"/' .env
+
       - name: Build release tarball
         run: make version=${{ steps.set_tag.outputs.tag_name }} build
 
       - name: Create a new release
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
@@ -67,7 +74,12 @@ jobs:
           files: mfa-${{ steps.set_tag.outputs.tag_name }}.tar.zst
 
       - name: Publish release
-        uses: softprops/action-gh-release@v1
+        uses: actions/github-script@v4
         with:
-          draft: false
-          tag_name: ${{ steps.set_tag.outputs.tag_name }}
+          script: |
+            github.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: ${{ steps.create_release.outputs.id }},
+                draft: false
+            })
