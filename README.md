@@ -22,9 +22,15 @@ $ scripts/bootstrap.sh --password <password>
 $ racket src/main.rkt help
 ```
 
-## Deployment to Production
+## Deploying to Production
 
-Production should be hardcoded as `mfa` in `~/.ssh/config`. To deploy:
+Deployment is automatic when pushing to the `production` branch. This
+will trigger the creation of a new release and a webhook notification
+sent to the production server, which will then download and install
+the latest release asset.
+
+Alternatively, deployment can be done manually using `Make` with
+production hardcoded as `mfa` in `~/.ssh/config`.
 
 ```shell
 $ make deploy
