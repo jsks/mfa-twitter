@@ -36,7 +36,7 @@ production hardcoded as `mfa` in `~/.ssh/config`.
 $ make deploy
 ```
 
-This will first create a distributable bundle with a standalone
+Manual deployment will first create a distributable bundle with a standalone
 executable and necessary shared libraries and runtime files. To ensure
 glibc compatibility, the actual `raco exe/distribute` commands will be
 run in a [Debian container](https://github.com/jsks/mfa-infra/pkgs/container/racket-build).
