@@ -19,6 +19,10 @@
                #:database string?
                #:socket (or/c path-string? 'guess #f)
                void?)]
+  [connect-friend (-> exact-positive-integer? exact-positive-integer? void?)]
+  [insert-profile (-> jsexpr? void?)]
+  [profile-exists? (-> exact-positive-integer? (or/c exact-positive-integer? false/c))]
+  [get-lapsed-profile (-> (or/c exact-positive-integer? false/c))]
   [insert-tweet (-> jsexpr? void?)]
   [get-accounts (-> (listof vector?))]
   [get-tweet-ids (-> exact-nonnegative-integer? (listof integer?))]
@@ -58,41 +62,68 @@
     (for/list ([(screen_name user_id since_id) (in-query db-conn query)])
       (vector screen_name user_id (sql-null->false since_id)))))
 
+(define (get-lapsed-profile)
+  (query-maybe-value db-conn @~a{select user_id from full_accounts
+                                 where last_checked is null or
+                                     last_checked < current_date - interval '1 day'
+                                 limit 1}))
+
 (define (get-tweet-ids n)
-  (query-list
-   db-conn @~a{select tweet_id from tweets
-               where deleted is false and
-                   last_checked < current_date - interval '7 days'
-               limit $1}
-   n))
+  (query-list db-conn @~a{select tweet_id from tweets
+                          where deleted is false and
+                              last_checked < current_date - interval '7 days'
+                          limit $1}
+              n))
 
 (define (insert-tweet tweet)
-  (query-exec
-   db-conn @~a{insert into tweets (tweet_id, user_id, json)
-               values ($1, $2, cast($3::text as jsonb))
-               on conflict do nothing}
-   (hash-ref tweet 'id)
-   (hash-ref tweet 'user_id)
-   (jsexpr->string tweet)))
-
+  (query-exec db-conn @~a{insert into tweets (tweet_id, user_id, json)
+                          values ($1, $2, cast($3::text as jsonb))
+                          on conflict do nothing}
+              (hash-ref tweet 'id)
+              (hash-ref tweet 'user_id)
+              (jsexpr->string tweet)))
 
 (define (set-tweet-deleted tweet-id)
-  (query-exec
-   db-conn @~a{update tweets set deleted = true where tweet_id = $1} tweet-id))
+  (query-exec db-conn @~a{update tweets set deleted = true where tweet_id = $1} tweet-id))
 
 (define (touch-tweet tweet-id)
-  (query-exec
-   db-conn @~a{update tweets set last_checked = current_timestamp where tweet_id = $1}
-   tweet-id))
+  (query-exec db-conn @~a{update tweets set last_checked = current_timestamp where tweet_id = $1} tweet-id))
 
 (define (update-engagement tweet-id favorite-count retweet-count)
-  (query-exec
-   db-conn @~a{insert into engagement (tweet_id, favorite_count, retweet_count)
-               values ($1, $2, $3)
-               on conflict (tweet_id) do update
-               set favorite_count = EXCLUDED.favorite_count,
-                   retweet_count = EXCLUDED.retweet_count}
-   tweet-id favorite-count retweet-count))
+  (query-exec db-conn @~a{insert into engagement (tweet_id, favorite_count, retweet_count)
+                          values ($1, $2, $3)
+                          on conflict (tweet_id) do
+                              update set favorite_count = EXCLUDED.favorite_count,
+                                         retweet_count = EXCLUDED.retweet_count}
+              tweet-id favorite-count retweet-count))
+
+(define (profile-exists? user_id)
+  (query-maybe-value db-conn @~a{select user_id from profiles where user_id = $1 limit 1} user_id))
+
+(define (insert-profile user)
+  (query-exec db-conn @~a{insert into profiles (user_id, name, screen_name, description,
+                                                verified, friends_count, followers_count,
+                                                statuses_count, created_at)
+                          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                          on conflict do nothing}
+   (hash-ref user 'id)
+   (hash-ref user 'name)
+   (hash-ref user 'screen_name)
+   (hash-ref user 'description)
+   (hash-ref user 'verified)
+   (hash-ref user 'friends_count)
+   (hash-ref user 'followers_count)
+   (hash-ref user 'statuses_count)
+   (srfi-date->sql-timestamp (twitter-date->srfi-date (hash-ref user 'created_at)))))
+
+(define (connect-friend user_id friend_id)
+  (query-exec db-conn @~a{insert into friends (user_profile_id, friend_profile_id)
+                          values ((select profile_id from profiles where user_id = $1
+                                   order by profile_id desc limit 1),
+                                  (select profile_id from profiles where user_id = $2
+                                   order by profile_id desc limit 1))
+                          on conflict do nothing}
+              user_id friend_id))
 
 (define (db-stats)
   (define added-tweets

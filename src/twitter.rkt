@@ -9,17 +9,22 @@
          racket/list
          racket/match
          racket/port
+         racket/sequence
          racket/string)
 
 (provide
  (struct-out exn:fail:twitter)
  (contract-out
   [access-token (parameter/c string?)]
+  [gen/friends (-> exact-positive-integer? generator?)]
   [gen/timeline (->* (exact-positive-integer?)
                      (#:since_id (or/c exact-positive-integer? false/c))
                      generator?)]
-  [get-tweets-by-id (-> (listof exact-positive-integer?) hash?)]
   [get-media (-> string? path-string? void?)]
+  [get-tweets-by-id (-> (and/c (listof exact-positive-integer?)
+                               (property/c length (<=/c 100)))
+                        hash?)]
+  [get-user (-> exact-positive-integer? hash?)]
   [rate-limit-status (->* () ((or/c (listof string?) false/c)) jsexpr?)]))
 
 (define access-token
@@ -132,6 +137,29 @@
                             (include_card_uri . "false")
                             (id . ,ids))))
   (call/input-url-get url read-json))
+
+(define (get-user user_id)
+  (define url (mk-api-url "users/show.json"
+                          `((include_entities . "false")
+                            (user_id . ,user_id))))
+  (call/input-url-get url read-json))
+
+(define (get-friends user_id [cursor -1])
+  (define url (mk-api-url "friends/list.json"
+                          `((user_id . ,user_id)
+                            (include_user_entities . "false")
+                            (count . 200)
+                            (skip_status . "true")
+                            (cursor . ,cursor))))
+  (call/input-url-get url read-json))
+
+(define (gen/friends user_id)
+  (generator ()
+    (let loop ([cursor -1])
+      (define friends (get-friends user_id cursor))
+      (yield (hash-ref friends 'users))
+      (when (not (= (hash-ref friends 'next_cursor) 0))
+        (loop (hash-ref friends 'next_cursor))))))
 
 ;; Returns a jsexpr hash table of the current rate limit status for
 ;; the given resources

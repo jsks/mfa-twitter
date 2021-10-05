@@ -3,6 +3,7 @@
 (require json
          racket/date
          racket/format
+         racket/function
          racket/contract
          racket/list
          racket/match
@@ -31,6 +32,7 @@
   (case command
     [("help") (handle-help)]
     [("sync-timelines") (handle-sync-timelines)]
+    [("sync-profiles") (handle-sync-profiles)]
     [("scan-tweets") (handle-scan-tweets)]
     [("status") (handle-status)]
     [else
@@ -43,6 +45,7 @@
    @~a{Available sub-commands:
        help               Show this message.
        sync-timelines     Update timeline store for all accounts in database.
+       sync-profiles      Update account profiles and followers.
        scan-tweets        Check if any stored tweets have been deleted and update
                               engagement numbers
        status             List current rate limits}))
@@ -104,7 +107,24 @@
                                    (select tweet 'favorite_count)
                                    (select tweet 'retweet_count))])))
 
-;;; Rate limit status
+;;; Update user profiles and friends list
+
+(define (handle-sync-profiles)
+  (define user_id (get-lapsed-profile))
+  (with-handlers
+    ([exn:fail:twitter? (λ (e) (log-error (exn-message e)))])
+    (call-with-bound-transaction (λ () (process-profile user_id)))))
+
+;; TODO: Rate limits capped at 6000 followers for friends/list.json endpoint
+(define (process-profile user_id)
+  (define user (get-user user_id))
+  (log-info "Syncing profile data for @~a" (select user 'screen_name))
+  (insert-profile user)
+  (for ([friends (in-producer (gen/friends user_id) (void))])
+    (for ([friend (in-list friends)])
+      (unless (profile-exists? (select friend 'id))
+        (insert-profile friend))
+      (connect-friend user_id (select friend 'id)))))
 
 ;;; Rate limit status
 (define (handle-status)
