@@ -3,14 +3,17 @@
 ;; TODO: SSL
 
 (require db
+         db/util/datetime
          json
          racket/contract
-         racket/format)
+         racket/format
+         threading)
+
+(require "utils.rkt")
 
 (provide
  (contract-out
   [call-with-bound-transaction (-> (-> any) any)]
-  [activity (-> vector?)]
   [init-db (-> #:user string?
                #:password string?
                #:database string?
@@ -19,13 +22,11 @@
   [insert-tweet (-> jsexpr? void?)]
   [get-accounts (-> (listof vector?))]
   [get-tweet-ids (-> exact-nonnegative-integer? (listof integer?))]
-  [n-deleted (-> exact-nonnegative-integer?)]
-  [n-tweets (-> exact-nonnegative-integer?)]
   [touch-tweet (-> exact-positive-integer? void?)]
   [set-tweet-deleted (-> exact-positive-integer? void?)]
   [update-engagement (-> exact-positive-integer? exact-nonnegative-integer?
                          exact-nonnegative-integer? void?)]
-  [user-stats (-> (listof vector?))]))
+  [db-stats (-> hash?)]))
 
 (struct db-settings (user database password socket) #:mutable)
 (define creds (db-settings "" "" "" #f))
@@ -46,15 +47,6 @@
 
 (define (call-with-bound-transaction proc)
   (call-with-transaction db-conn proc))
-
-(define (activity)
-  (vector
-   (query-value db-conn @~a{select count(*) from tweets
-                            where cast(json->>'created_at' as timestamp) >
-                                current_date - interval '7 days'})
-   (query-value db-conn @~a{select count(*) from tweets
-                            where last_checked >= current_date - interval '7 days' and
-                                added < current_date - interval '7 days'})))
 
 (define (get-accounts)
   (let ([query @~a{select screen_name, user_id, max(tweet_id) from accounts
@@ -83,11 +75,6 @@
    (hash-ref tweet 'user_id)
    (jsexpr->string tweet)))
 
-(define (n-tweets)
-  (query-value db-conn @~a{select count(*) from tweets}))
-
-(define (n-deleted)
-  (query-value db-conn @~a{select count(*) from tweets where deleted is true}))
 
 (define (set-tweet-deleted tweet-id)
   (query-exec
@@ -107,12 +94,38 @@
                    retweet_count = EXCLUDED.retweet_count}
    tweet-id favorite-count retweet-count))
 
-(define (user-stats)
-  (query-rows
-   db-conn
-   @~a{select screen_name, count(*) as N
-       from atweets
-       where cast(json->>'created_at' as timestamp) >
-           current_date - interval '7 days'
-       group by screen_name
-       order by N desc}))
+(define (db-stats)
+  (define added-tweets
+    (~> (query db-conn @~a{select count(*), to_char(added, 'Day') as day
+                           from tweets
+                           where added >= current_date - interval '7 days'
+                           group by day})
+        (rows->dict #:key "day" #:value "count")))
+
+  (define checked-tweets
+    (~> (query db-conn @~a{select count(*), to_char(added, 'Day') as day
+                           from tweets
+                           where last_checked >= current_date - interval '7 days'
+                           group by day})
+        (rows->dict #:key "day" #:value "count")))
+
+  (define n-deleted (query-value db-conn @~a{select count(*) from tweets
+                                             where deleted is true}))
+
+  (define n-tweets (query-value db-conn @~a{select count(*) from tweets}))
+
+  (define top-user
+    (~> (query db-conn @~a{select screen_name, count(*)
+                           from atweets
+                           where cast(json->>'created_at' as timestamp) >
+                               current_date - interval '7 days'
+                           group by screen_name
+                           order by count desc
+                           limit 1})
+        (rows->dict #:key "screen_name" #:value "count")))
+
+  (hash 'latest-tweets added-tweets
+        'checked-tweets checked-tweets
+        'n-deleted n-deleted
+        'n-tweets n-tweets
+        'top-user top-user))
