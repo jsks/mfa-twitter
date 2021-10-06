@@ -14,10 +14,11 @@
 (provide
  (contract-out
   [call-with-bound-transaction (-> (-> any) any)]
-  [init-db (-> #:user string?
-               #:password string?
-               #:database string?
-               #:socket (or/c path-string? 'guess #f)
+  [init-db (->* ()
+                (#:user string?
+                 #:password string?
+                 #:database string?
+                 #:socket (or/c path-string? 'guess #f))
                void?)]
   [connect-friend (-> exact-positive-integer? exact-positive-integer? void?)]
   [insert-profile (-> jsexpr? void?)]
@@ -35,7 +36,10 @@
 (struct db-settings (user database password socket) #:mutable)
 (define creds (db-settings "" "" "" #f))
 
-(define (init-db #:user user #:password password #:database database #:socket socket)
+(define (init-db #:user [user "postgres"]
+                 #:password [password "postgres"]
+                 #:database [database "postgres"]
+                 #:socket [socket #f])
   (set-db-settings-user! creds user)
   (set-db-settings-password! creds password)
   (set-db-settings-database! creds database)
@@ -104,8 +108,7 @@
   (query-exec db-conn @~a{insert into profiles (user_id, name, screen_name, description,
                                                 verified, friends_count, followers_count,
                                                 statuses_count, created_at)
-                          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                          on conflict do nothing}
+                          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)}
    (hash-ref user 'id)
    (hash-ref user 'name)
    (hash-ref user 'screen_name)

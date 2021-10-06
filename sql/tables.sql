@@ -34,6 +34,7 @@ create table if not exists media (
 );
 
 create table if not exists profiles (
+    profile_id serial primary key,
     user_id bigint not null,
     name text,
     screen_name text not null,
@@ -43,18 +44,13 @@ create table if not exists profiles (
     followers_count bigint default 0,
     statuses_count bigint default 0,
     created_at timestamp not null,
-    added timestamp not null default now(),
-    version_id int not null check(version_id > 0),
-    primary key (user_id, version_id)
+    added timestamp not null default now()
 );
+create index idx_user_id on profiles(user_id, added);
 
 create table if not exists friends (
-    user_id bigint references accounts (user_id),
-    friend_id bigint not null,
+    user_profile_id int references profiles (profile_id),
+    friend_profile_id int references profiles (profile_id),
     added timestamp not null default now(),
-    version_id int not null check(version_id > 0),
-    friend_version_id int not null,
-    primary key (user_id, friend_id, version_id),
-    foreign key (friend_id, friend_version_id) references
-        profiles (user_id, version_id)
+    primary key (user_profile_id, added, friend_profile_id)
 );

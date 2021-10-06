@@ -59,7 +59,7 @@ integration submodule. This requires first a test instance of
 PostgreSQL populated with fake data.
 
 ```shell
-$ podman -p 5432:5432 -e POSTGRES_PASSWORD=<password> -d postgres
-$ scripts/bootstrap.sh --testing --password <password>
+$ podman -p 5432:5432 -e POSTGRES_USER=test -e POSTGRES_PASSWORD=<password> -d postgres
+$ scripts/bootstrap.sh --testing --password <password> --user test
 $ raco test --submodule integration test
 ```

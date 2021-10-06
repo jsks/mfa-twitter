@@ -18,6 +18,7 @@ Options:
     -p | --port         Port that postgres is listening on.
     -s | --sql          Data directory for sql artefacts.
     -t | --testing      Insert testing data intended for integration tests.
+                        NOTE: this is a destructive process!
     -u | --user         Username to connect to postgres.
     -W | --password     Password to connect to postgres.
     --help              This help message.
