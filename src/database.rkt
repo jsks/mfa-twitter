@@ -150,7 +150,7 @@
 
   (define top-user
     (~> (query db-conn @~a{select screen_name, count(*)
-                           from atweets
+                           from full_tweets
                            where cast(json->>'created_at' as timestamp) >
                                current_date - interval '7 days'
                            group by screen_name

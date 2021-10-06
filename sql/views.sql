@@ -1,4 +1,4 @@
-create or replace view atweets as
+create or replace view full_tweets as
     select accounts.screen_name, account_type.type_text as account_type, tweets.*
     from tweets
     join accounts using (user_id)
