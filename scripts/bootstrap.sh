@@ -41,7 +41,7 @@ accounts_file=${(v)lopts[(i)*-a*]:-refs/accounts.csv}
 sql_dir=${(v)lopts[(i)*-s*]:-sql}
 [[ ! -d $sql_dir ]] && err "Invalid sql directory: $sql_dir"
 
-! psql -w -c '\q' 2>/dev/null && createdb -w $PGDATABASE
+! psql -w -c '\q' && createdb -w $PGDATABASE
 for i in {types,tables,triggers,views,roles}; do
     psql -w -f $sql_dir/$i.sql
 done
