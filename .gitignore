@@ -1,3 +1,5 @@
+.env-test
+
 refs/*
 !refs/accounts.csv
 
