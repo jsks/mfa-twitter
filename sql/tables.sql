@@ -28,6 +28,7 @@ create table if not exists engagement (
 create table if not exists media (
     media_id bigint primary key,
     tweet_id bigint references tweets (tweet_id),
+    retweeted boolean default false,
     file_path text,
     media_type_id int references media_type (type_id),
     not_found boolean default false
