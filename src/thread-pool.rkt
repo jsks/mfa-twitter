@@ -14,7 +14,7 @@
 (struct thread-pool (threads input output) #:transparent)
 
 (define-syntax (for/thread stx)
-  (for_/thread/collect stx #'void #f))
+  (for_/thread/collect stx #'void (void)))
 
 (define-syntax (for/thread/list stx)
   (for_/thread/collect stx #'cons '()))
