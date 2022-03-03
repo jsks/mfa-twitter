@@ -3,7 +3,7 @@ Description=MFA scraping timer, runs every 20 minutes
 After=network.target
 
 [Timer]
-OnCalendar=0/20:00
+OnCalendar=*:0/20
 RandomizedDelaySec=5m
 Persistent=true
 

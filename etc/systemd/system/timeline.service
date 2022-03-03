@@ -5,4 +5,4 @@ Description=Scrape twitter target timelines
 User=mfa
 Group=mfa
 Type=oneshot
-ExecStart=flock -w 300 /var/lock/mfa -c /usr/local/bin/mfa sync-timelines
+ExecStart=flock -w 300 /var/lock/mfa -c "/usr/local/bin/mfa sync-timelines"
