@@ -28,6 +28,8 @@ copy:
 	install -D -m644 refs/accounts.csv $(datadir)/mfa/accounts.csv
 	install -D -m644 deploy.yml $(datadir)/ansible/deploy.yml
 	install -D -m755 scripts/bootstrap.sh $(bindir)/bootstrap.sh
+
+	@# Inline sourced library script
 	@sed -i -e '/^source.*/r scripts/base.sh' -e 's///' $(bindir)/bootstrap.sh
 
 exe:

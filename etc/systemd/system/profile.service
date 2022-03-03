@@ -1,0 +1,8 @@
+[Unit]
+Description=Sync profile data
+
+[Service]
+User=mfa
+Group=mf
+Type=oneshot
+ExecStart=flock -w 300 /var/lock/mfa -c /usr/local/bin/mfa sync-profiles

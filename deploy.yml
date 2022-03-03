@@ -13,6 +13,13 @@
         shell: /bin/bash
         system: yes
 
+    - name: Create lockfile for systemd services
+      file:
+        name: /var/lock/mfa
+        owner: mfa
+        state: touch
+        mode: u=rw,g=r,o=r
+
     - name: Copy and extract release tarball
       unarchive:
         dest: /usr/local/
@@ -31,5 +38,6 @@
         enabled: yes
         state: started
       loop:
+        - profile
         - scan
         - timeline

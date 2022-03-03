@@ -5,4 +5,4 @@ Description=Check tweet deletion and update engagement stats
 User=mfa
 Group=mfa
 Type=oneshot
-ExecStart=/usr/local/bin/mfa scan-tweets
+ExecStart=flock -w 300 /var/lock/mfa -c /usr/local/bin/mfa scan-tweets

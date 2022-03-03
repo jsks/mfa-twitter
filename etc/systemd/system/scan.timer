@@ -1,5 +1,5 @@
 [Unit]
-Description=MFA scan tweets timer, runs once an hour
+Description=MFA scan tweets timer, runs four times a day
 After=network.target
 
 [Timer]
