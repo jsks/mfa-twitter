@@ -2,7 +2,8 @@
 
 (require racket/contract
          racket/match
-         racket/string)
+         racket/string
+         threading)
 
 (provide
  (contract-out
@@ -14,8 +15,10 @@
                           pg_database
                           pg_socket))
 
-(define (strip-quotes str)
-  (string-trim str "\""))
+(define (sanitize str)
+  (~> str
+      (string-trim #px"\\s*#.*" #:left? #f)
+      (string-trim #px"\\s*[\"\']?\\s*")))
 
 (define (split-once pattern str)
   (match (regexp-match-positions pattern str)
@@ -35,7 +38,7 @@
 
 (define (parse-line line)
   (let*-values ([(key value) (split-once #rx" *= *" line)]
-                [(sanitized-value) (and value (strip-quotes value))])
+                [(sanitized-value) (and value (sanitize value))])
     (if (eq? key 'pg_socket)
         (values 'pg_socket (match sanitized-value
                       ["false" #f]

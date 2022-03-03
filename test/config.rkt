@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require rackunit)
-(require/expose "../src/config.rkt" (config-line? load-config parse-line))
+(require/expose "../src/config.rkt" (config-line? load-config parse-line sanitize))
 
 (check-pred config-line? "pg_database = test")
 (check-pred config-line? "pg_database = \"test\" # Comment")
@@ -26,3 +26,13 @@
 (check-not-exn (λ () (load-config "data/test.conf")))
 (check-pred hash? (load-config "data/test.conf"))
 (check-exn exn:fail:user? (λ () (load-config "data/test-bad.conf")))
+
+(check-equal? (sanitize "hello world") "hello world")
+(check-equal? (sanitize "hello world # with a comment") "hello world")
+(check-equal? (sanitize "\"hello world\"") "hello world")
+(check-equal? (sanitize " \" hello world \" #") "hello world")
+(check-equal? (sanitize "\'hello world\'") "hello world")
+(check-equal? (sanitize "hello world   ") "hello world")
+
+;; Note: proper parsing should reject this, but our scope is limited
+(check-equal? (sanitize "\'hello world \"") "hello world")
