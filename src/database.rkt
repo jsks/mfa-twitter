@@ -70,6 +70,7 @@
   (query-maybe-value db-conn @~a{select user_id from full_accounts
                                  where last_checked is null or
                                      last_checked < current_date - interval '1 day'
+                                 order by random()
                                  limit 1}))
 
 (define (get-tweet-ids n)
