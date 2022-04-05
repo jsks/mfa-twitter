@@ -133,14 +133,14 @@
   (define added-tweets
     (~> (query db-conn @~a{select count(*), to_char(added, 'Day') as day
                            from tweets
-                           where added >= current_date - interval '7 days'
+                           where added >= current_date - interval '6 days'
                            group by day})
         (rows->dict #:key "day" #:value "count")))
 
   (define checked-tweets
-    (~> (query db-conn @~a{select count(*), to_char(added, 'Day') as day
+    (~> (query db-conn @~a{select count(*), to_char(last_checked, 'Day') as day
                            from tweets
-                           where last_checked >= current_date - interval '7 days'
+                           where last_checked >= current_date - interval '6 days'
                            group by day})
         (rows->dict #:key "day" #:value "count")))
 
@@ -152,8 +152,8 @@
   (define top-user
     (~> (query db-conn @~a{select screen_name, count(*)
                            from full_tweets
-                           where cast(json->>'created_at' as timestamp) >
-                               current_date - interval '7 days'
+                           where cast(json->>'created_at' as timestamp) >=
+                               current_date - interval '6 days'
                            group by screen_name
                            order by count desc
                            limit 1})
